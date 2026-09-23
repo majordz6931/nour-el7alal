@@ -95,3 +95,16 @@
 .admin-edit{padding:14px;border:1px solid #293940;border-radius:12px;background:#111d23}
 .admin-msgs{max-height:360px;overflow:auto;background:#0d181e;border-radius:12px;padding:10px}
 @media(max-width:800px){.admin-stats{grid-template-columns:repeat(2,1fr)}.admin-user{align-items:flex-start;flex-direction:column}.admin-actions{width:100%;justify-content:flex-start}}
+
+/* Chat online-members navigation */
+.back-members{display:none;border:0;background:transparent;color:#dbe8ee;font-weight:700;font-size:14px;padding:8px 6px;cursor:pointer;white-space:nowrap}
+@media(max-width:800px){
+  .chat-app{position:relative;overflow:hidden}
+  .chat-sidebar,.room{width:100%;min-width:100%;transition:transform .2s ease}
+  .chat-app{display:flex!important;flex-wrap:nowrap}
+  .chat-sidebar.mobile-hidden{display:none!important}
+  .room{display:none!important}
+  .room.mobile-active{display:flex!important}
+  .back-members{display:block}
+  .room-head{gap:8px!important}
+}
