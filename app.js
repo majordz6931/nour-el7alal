@@ -34,7 +34,8 @@ async function openProfile(id){
  $("#profileRequest").onclick=()=>sendRequest(id);
 }
 async function selectUser(id){const p=state.profiles.find(x=>String(x.id)===String(id));if(!p){console.error("User not found",id);return}const roomHead=document.querySelector(".room-head");if(roomHead)roomHead.hidden=false;state.unread[id]=0;state.selectedUser=p;$("#roomName").textContent=p.username;$("#roomStatus").textContent=(p.wilaya||"الجزائر")+" • محادثة خاصة";$(".active-avatar").innerHTML=p.avatar_url?'<img src="'+escapeHtml(p.avatar_url)+'" alt="">':escapeHtml((p.username||"ن")[0]);$("#message").disabled=false;$(".send-btn").disabled=false;$("#message").placeholder="اكتب رسالة محترمة...";document.querySelector(".chat-sidebar")?.classList.add("mobile-hidden");document.querySelector(".room")?.classList.add("mobile-active");renderUsers();$("#message").focus();try{await loadMessages()}catch(err){console.error("loadMessages:",err);state.messages=[];renderMessages()}}
-async function loadMessages(){if(!state.selectedUser)return;const me=state.user.id,other=state.selectedUser.id;const {data,error}=await supabaseClient.from("messages").select("id,sender_id,recipient_id,body,created_at,edited_at,deleted_at").or("and(sender_id.eq."+me+",recipient_id.eq."+other+"),and(sender_id.eq."+other+",recipient_id.eq."+me+")").order("created_at",{ascending:true});if(error){console.error(error);return}state.messages=data||[];renderMessages();subscribeMessages()}
+async function loadMessages(){if(!state.selectedUser)return;const me=state.user.id,other=state.selectedUser.id;const {data,error}=await supabaseClient.from("messages").select("id,sender_id,recipient_id,body,created_at,edited_at,deleted_at,attachment_url,attachment_name").or("and(sender_id.eq."+me+",recipient_id.eq."+other+"),and(sender_id.eq."+other+",recipient_id.eq."+me+")").order("created_at",{ascending:true});if(error){console.error(error);return}state.messages=data||[];renderMessages();subscribeMessages()}
+function renderVoiceMessage(m){return m.attachment_url?'<audio class="voice-player" controls preload="metadata" src="'+escapeHtml(m.attachment_url)+'"></audio>':escapeHtml(m.body||"");}
 function renderMessages(){const el=$("#messages");if(!state.selectedUser){el.innerHTML="";return}if(!state.messages.length){el.innerHTML='<div class="welcome-chat"><div class="welcome-icon">💬</div><h3>ابدأ المحادثة</h3><p>أرسل أول رسالة محترمة إلى '+escapeHtml(state.selectedUser.username)+'.</p></div>';return}el.innerHTML=state.messages.map(m=>'<div class="bubble '+(m.sender_id===state.user.id?"mine":"")+'"><b>'+escapeHtml(m.sender_id===state.user.id?state.profile.username:state.selectedUser.username)+'</b><span>'+escapeHtml(m.deleted_at?"تم حذف الرسالة":m.body)+'</span><time>'+new Date(m.created_at).toLocaleTimeString("ar-DZ",{hour:"2-digit",minute:"2-digit"})+'</time></div>').join("");el.scrollTop=el.scrollHeight}
 function subscribeMessages(){if(state.channel)supabaseClient.removeChannel(state.channel);if(!state.selectedUser)return;const other=state.selectedUser.id;state.channel=supabaseClient.channel("private-chat-"+state.user.id+"-"+other).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"recipient_id=eq."+state.user.id},payload=>{if(payload.new.sender_id===other&&!state.messages.some(m=>m.id===payload.new.id)){state.messages.push(payload.new);renderMessages()}}).subscribe()}
 function notifyMessage(message){const sender=state.profiles.find(p=>p.id===message.sender_id);const name=sender?.username||"عضو جديد";const text=String(message.body||"رسالة جديدة").slice(0,120);if(document.hidden&&"Notification" in window&&Notification.permission==="granted"){new Notification("نور الحلال • "+name,{body:text,icon:sender?.avatar_url||undefined,tag:"message-"+message.id})}if(navigator.vibrate)navigator.vibrate([120,60,120])}
@@ -125,6 +126,33 @@ async function reportUserDirect(id,name){
   const {error}=await supabaseClient.from("profile_reports").insert({reporter_id:state.user.id,reported_id:id,reason,details:null});
   if(error){alert("تعذر إرسال البلاغ: "+error.message);return}
   alert("تم إرسال البلاغ للإدارة للمراجعة.");
+}
+let voiceRecorder=null,voiceChunks=[],voiceStartedAt=0;
+async function toggleVoiceRecording(){
+ if(!state.selectedUser)return msg("اختر عضوًا أولًا.");
+ if(voiceRecorder?.state==="recording"){voiceRecorder.stop();return}
+ if(!navigator.mediaDevices?.getUserMedia)return msg("المتصفح لا يدعم تسجيل الصوت.");
+ try{
+  const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  const types=["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/ogg;codecs=opus"];
+  const mime=types.find(t=>MediaRecorder.isTypeSupported?.(t))||"";
+  voiceRecorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);voiceChunks=[];voiceStartedAt=Date.now();
+  const btn=$("#voiceBtn");btn.textContent="⏹️";btn.classList.add("recording");
+  voiceRecorder.ondataavailable=e=>{if(e.data.size)voiceChunks.push(e.data)};
+  voiceRecorder.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());btn.textContent="🎤";btn.classList.remove("recording");const blob=new Blob(voiceChunks,{type:voiceRecorder.mimeType||"audio/webm"});if(blob.size<1000)return;if(Date.now()-voiceStartedAt<500){msg("سجّل ثانية واحدة على الأقل.");return}await sendVoiceMessage(blob)};
+  voiceRecorder.start();
+ }catch(e){console.error("voice:",e);msg("تعذر الوصول إلى الميكروفون. اسمح بالوصول للميكروفون ثم أعد المحاولة.")}
+}
+async function sendVoiceMessage(blob){
+ const recipientId=state.selectedUser?.id;if(!recipientId)return;
+ const ext=(blob.type.includes("ogg")?"ogg":blob.type.includes("mp4")?"m4a":"webm");
+ const path=state.user.id+"/voice-"+Date.now()+"."+ext;
+ const {error:up}=await supabaseClient.storage.from("voice-messages").upload(path,blob,{contentType:blob.type||"audio/webm",cacheControl:"3600",upsert:false});
+ if(up){console.error(up);msg("تعذر رفع الرسالة الصوتية: "+up.message);return}
+ const {data:url}=supabaseClient.storage.from("voice-messages").getPublicUrl(path);
+ const {error}=await supabaseClient.from("messages").insert({sender_id:state.user.id,recipient_id:recipientId,body:"",attachment_url:url.publicUrl,attachment_name:path});
+ if(error){await supabaseClient.storage.from("voice-messages").remove([path]);msg("تعذر إرسال الرسالة الصوتية: "+error.message);return}
+ await loadMessages();
 }
 async function sendMessage(e){e.preventDefault();if(!state.selectedUser)return msg("اختر عضوًا أولًا.");const input=$("#message");const body=input.value.trim();if(!body)return;const recipientId=state.selectedUser.id;const {error}=await supabaseClient.from("messages").insert({sender_id:state.user.id,recipient_id:recipientId,body});if(error){console.error("sendMessage:",error);msg("تعذر إرسال الرسالة: "+error.message);return}input.value="";const {data:check,error:checkError}=await supabaseClient.from("messages").select("id,sender_id,recipient_id,body,created_at,edited_at,deleted_at").or("and(sender_id.eq."+state.user.id+",recipient_id.eq."+recipientId+"),and(sender_id.eq."+recipientId+",recipient_id.eq."+state.user.id+")").order("created_at",{ascending:true});if(!checkError){state.messages=check||[];renderMessages()}else{console.error("reload messages:",checkError);msg("تم الإرسال، لكن تعذر تحديث المحادثة.");}}
 async function adminApi(action,extra={}){const {data,error}=await supabaseClient.functions.invoke("admin-control",{body:{action,...extra}});if(error)throw error;if(data?.error)throw new Error(data.error);return data}
