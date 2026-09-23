@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07111f">
+<title>نور الحلال | تعارف ودردشة جزائرية</title>
+<meta name="description" content="نور الحلال — مساحة جزائرية للتعارف والدردشة باحترام، للبالغين 18 سنة فأكثر.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg"></div>
+<main class="shell">
+<section class="card auth" id="authView">
+  <div class="logo">نور <span>الحلال</span></div>
+  <p class="tag">مساحة جزائرية للتعارف باحترام وخصوصية</p>
+  <div class="notice">🔞 هذا الموقع مخصص للبالغين من عمر 18 سنة فأكثر.</div>
+  <div class="tabs">
+    <button class="active" data-tab="register">إنشاء حساب</button>
+    <button data-tab="login">تسجيل الدخول</button>
+  </div>
+  <form id="registerForm">
+    <label>اسم المستخدم<input id="username" required minlength="3" maxlength="30" autocomplete="username"></label>
+    <label>كلمة المرور<input id="password" type="password" required minlength="6" autocomplete="new-password"></label>
+    <label>تأكيد كلمة المرور<input id="confirmPassword" type="password" required autocomplete="new-password"></label>
+    <label>العمر<input id="age" type="number" min="18" max="100" required></label>
+    <label>الولاية<select id="wilaya" required></select></label>
+    <label class="check"><input type="checkbox" required> <span>أؤكد أن عمري 18 سنة أو أكثر وأوافق على احترام الآخرين.</span></label>
+    <button class="primary" type="submit">إنشاء حساب</button>
+  </form>
+  <form id="loginForm" hidden>
+    <label>اسم المستخدم<input id="loginUsername" required autocomplete="username"></label>
+    <label>كلمة المرور<input id="loginPassword" type="password" required autocomplete="current-password"></label>
+    <button class="primary" type="submit">دخول</button>
+  </form>
+  <p class="msg" id="authMsg"></p>
+</section>
+
+<section class="card chat" id="chatView" hidden>
+<header>
+  <div><strong>نور الحلال</strong><small id="me"></small></div>
+  <button class="ghost" id="logout">تسجيل الخروج</button>
+</header>
+<div class="notice">🤝 تعارف باحترام • 🚫 الإبلاغ والحظر • 🔒 الخصوصية مهمة</div>
+<div class="layout">
+<aside><h3>الأعضاء</h3><div id="users"></div></aside>
+<div class="room">
+<div class="messages" id="messages"></div>
+<form class="send" id="messageForm"><input id="message" placeholder="اكتب رسالتك..." maxlength="500" autocomplete="off"><button class="primary" type="submit">إرسال</button></form>
+</div>
+</div>
+</section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
