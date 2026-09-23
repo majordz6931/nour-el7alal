@@ -38,3 +38,21 @@
 .chat-sidebar,.room{direction:rtl}
 .chat-sidebar{border-left:0;border-right:1px solid #1e354c}
 @media(max-width:700px){.chat-app{direction:rtl}.chat-sidebar{border-right:0}}
+
+/* Final chat UI polish */
+.chat-app{grid-template-columns:320px minmax(0,1fr);background:#06111d;min-height:650px}
+.chat-sidebar{padding:18px 14px;background:linear-gradient(180deg,#091a2a,#071522);border-right:1px solid #20384f!important;border-left:0!important}
+.sidebar-title{padding:4px 6px 14px}.sidebar-title h3{font-size:17px;letter-spacing:.2px}
+.online-title{display:flex;justify-content:space-between;align-items:center;margin:8px 5px 12px;padding-bottom:10px;border-bottom:1px solid #1b3146;font-weight:700;color:#d5e2ed}.online-title span{color:#68d9a4;font-weight:800}
+.user{min-height:68px;margin:0 0 7px;padding:10px 11px;border-radius:15px!important;gap:11px}.user i{margin-right:2px}.user.selected{box-shadow:inset 3px 0 0 #55d39a}
+.room{background:#06121f}.room-head{min-height:78px;padding:13px 20px;background:rgba(11,28,45,.96);box-shadow:0 4px 18px rgba(0,0,0,.12)}
+.room-head .active-avatar{box-shadow:0 0 0 3px rgba(74,197,140,.08)}
+.messages{padding:26px 30px;min-height:430px;background:linear-gradient(180deg,#071522,#06111d)}
+.messages::-webkit-scrollbar{width:7px}.messages::-webkit-scrollbar-thumb{background:#203a52;border-radius:20px}
+.bubble{max-width:min(70%,520px);padding:11px 15px;border-radius:18px 18px 18px 6px;margin:9px 0;background:#102438;border-color:#1e3a52}
+.bubble.mine{border-radius:18px 18px 6px 18px;background:linear-gradient(135deg,#18513d,#123c30);border-color:#2b7459}
+.bubble span{font-size:14px}.bubble time{font-size:10px;opacity:.7}
+.send{padding:13px 18px 11px;gap:9px;background:#091827;border-top:1px solid #1d354c}.send input{height:48px;border-radius:16px}.attach,.send-btn{height:46px;border-radius:14px}.send-btn{min-width:92px}
+.quick-replies{padding:0 18px 15px;background:#091827}.quick-replies button{padding:8px 12px}
+.welcome-chat{margin:145px auto}.welcome-chat h3{margin:14px 0 7px}.welcome-chat p{color:#71879d}
+@media(max-width:700px){.chat-app{grid-template-columns:1fr;min-height:calc(100vh - 70px)}.chat-sidebar{max-height:190px;border-right:0!important;border-bottom:1px solid #20384f;padding:10px}.sidebar-title{padding:2px 4px 8px}.online-title{margin:4px 4px 8px;padding-bottom:7px}.user{min-height:54px;margin-bottom:5px}.avatar-sm{width:40px;height:40px}.messages{padding:18px 12px}.bubble{max-width:86%}.room-head{padding:10px 12px}.send{padding:8px}.quick-replies{padding-bottom:9px}.quick-replies button{padding:7px 10px}}
