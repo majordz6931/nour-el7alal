@@ -26,3 +26,5 @@
 .safety-bar{background:#081522;border-color:#193149;padding:10px}.search-box input{border-radius:13px;background:#071522}
 .welcome-chat{margin:130px auto}.welcome-icon{width:70px;height:70px;margin:auto;display:grid;place-items:center;border-radius:50%;background:#102b25;border:1px solid #28634d}
 @media(max-width:700px){.chat{border-radius:0;border-left:0;border-right:0}.chat-app{min-height:calc(100vh - 74px);grid-template-columns:1fr}.chat-sidebar{max-height:210px;padding:12px}.user{min-height:58px}.avatar-sm{width:40px;height:40px}.room-head{min-height:68px;padding:9px 12px}.active-avatar{width:44px;height:44px}.messages{padding:16px 12px;min-height:360px;max-height:none}.bubble{max-width:82%}.send{padding:8px}.send-btn{padding:0 13px}}
+
+.unread-badge{display:grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#4ac58c;color:#04120b;font-size:10px;font-style:normal;font-weight:900;margin-right:4px}.user{position:relative}
