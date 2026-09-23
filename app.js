@@ -41,10 +41,82 @@ function notifyMessage(message){const sender=state.profiles.find(p=>p.id===messa
 function startNotifications(){if(state.notificationChannel)return;state.notificationChannel=supabaseClient.channel("all-messages-"+state.user.id).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"recipient_id=eq."+state.user.id},payload=>{const m=payload.new;if(m.sender_id===state.user.id)return;if(state.selectedUser?.id===m.sender_id){if(!state.messages.some(x=>x.id===m.id)){state.messages.push(m);renderMessages()}return}state.unread[m.sender_id]=(state.unread[m.sender_id]||0)+1;renderUsers();notifyMessage(m)}).subscribe();if("Notification" in window&&Notification.permission==="default"){setTimeout(()=>Notification.requestPermission().catch(()=>{}),1500)}}
 async function register(e){e.preventDefault();const username=$("#username").value.trim(),password=$("#password").value,age=Number($("#age").value),wilaya=$("#wilaya").value,photo=photoInput?.files?.[0];if(!photo)return msg("لازم تختار صورة بروفايل.");if(password!==$("#confirmPassword").value)return msg("كلمتا المرور غير متطابقتين.");if(age<18)return msg("الموقع مخصص لمن أعمارهم 18 سنة أو أكثر.");if(!wilaya)return msg("اختر الولاية.");if(!/^[\p{L}\p{N}_ .-]{3,30}$/u.test(username))return msg("اسم المستخدم يجب أن يكون بين 3 و30 حرفًا.");msg("جاري إنشاء الحساب...");try{const {data,error}=await supabaseClient.functions.invoke("create-nour-account",{body:{username,password,age,wilaya}});if(error)throw error;if(!data?.ok)throw new Error(data?.error==="username_taken"?"اسم المستخدم مستعمل من قبل.":data?.details||data?.error||"تعذر إنشاء الحساب.");const {data:loginData,error:loginError}=await supabaseClient.auth.signInWithPassword({email:internalEmail(username),password});if(loginError)throw loginError;await loadProfile(loginData.user.id);const avatar=await uploadAvatar(loginData.user.id,photo,null);const {error:updateError}=await supabaseClient.from("profiles").update({avatar_path:avatar.path,avatar_url:avatar.url}).eq("id",data.user_id);if(updateError)throw updateError;state.profile.avatar_path=avatar.path;state.profile.avatar_url=avatar.url;await showChat()}catch(err){console.error(err);msg(err.message||"تعذر إنشاء الحساب.")}}
 async function login(e){e.preventDefault();msg("جاري تسجيل الدخول...");try{const username=$("#loginUsername").value.trim();if(!username)return msg("اكتب اسم المستخدم.");const {data,error}=await supabaseClient.auth.signInWithPassword({email:internalEmail(username),password:$("#loginPassword").value});if(error)throw error;await loadProfile(data.user.id);await showChat()}catch(err){console.error(err);msg(err.message||"تعذر تسجيل الدخول.")}}
-async function blockUser(id){if(!id||id===state.user.id)return;const p=state.profiles.find(x=>x.id===id)||state.selectedUser;const name=p?.username||"هذا العضو";if(!confirm("حظر "+name+"؟\\nلن تتمكن أنت وهذا العضو من إرسال رسائل لبعضكما."))return;const {error}=await supabaseClient.from("profile_blocks").upsert({user_id:state.user.id,blocked_id:id},{onConflict:"user_id,blocked_id"});if(error){alert("تعذر الحظر: "+error.message);return}state.blockedIds.add(id);state.selectedUser=null;$("#message").value="";$("#message").disabled=true;$(".send-btn").disabled=true;const h=document.querySelector(".room-head");if(h)h.hidden=true;await loadProfiles();document.querySelector(".chat-sidebar")?.classList.remove("mobile-hidden");document.querySelector(".room")?.classList.remove("mobile-active");alert("تم حظر العضو.");}
-async function unblockUser(id){if(!id)return;const {error}=await supabaseClient.from("profile_blocks").delete().eq("user_id",state.user.id).eq("blocked_id",id);if(error){alert("تعذر فك الحظر: "+error.message);return}state.blockedIds.delete(id);await loadProfiles();alert("تم فك الحظر.");}
-async function reportUser(id,name){if(!id||id===state.user.id)return;const reason=prompt("سبب الإبلاغ عن "+(name||"العضو")+"؟\\nمثال: إساءة، تحرش، حساب مزيف، محتوى غير مناسب.");if(!reason||!reason.trim())return;const details=prompt("تفاصيل إضافية (اختياري):")||null;const {error}=await supabaseClient.from("profile_reports").insert({reporter_id:state.user.id,reported_id:id,reason:reason.trim(),details});if(error){alert("تعذر إرسال البلاغ: "+error.message);return}alert("تم إرسال البلاغ للإدارة للمراجعة.");}
-async function showModerationMenu(id,name){const blocked=state.blockedIds.has(id);const choice=prompt((blocked?"إدارة العضو":"إدارة العضو")+"\\n1 - "+(blocked?"فك الحظر":"حظر العضو")+"\\n2 - الإبلاغ عن العضو\\nاكتب رقم الخيار");if(choice==="1"){if(blocked)await unblockUser(id);else await blockUser(id)}else if(choice==="2"){await reportUser(id,name)}}
+function closeModerationModal(){document.querySelector(".moderation-modal")?.remove()}
+function showModerationChoice(id,name){
+  return new Promise(resolve=>{
+    closeModerationModal();
+    const blocked=state.blockedIds.has(id);
+    const modal=document.createElement("div");
+    modal.className="moderation-modal";
+    modal.innerHTML='<div class="moderation-card" role="dialog" aria-modal="true"><div class="moderation-head"><strong>إدارة العضو</strong><button type="button" class="moderation-close">×</button></div><p class="moderation-name">'+escapeHtml(name||"العضو")+'</p><div class="moderation-options"><button type="button" data-action="block">'+(blocked?"🔓 فك الحظر":"🚫 حظر العضو")+'</button><button type="button" data-action="report">⚠️ إبلاغ عن العضو</button><button type="button" data-action="cancel">إلغاء</button></div></div>';
+    document.body.appendChild(modal);
+    modal.querySelector(".moderation-close").onclick=()=>{closeModerationModal();resolve(null)};
+    modal.onclick=e=>{if(e.target===modal){closeModerationModal();resolve(null)}};
+    modal.querySelectorAll("[data-action]").forEach(b=>b.onclick=()=>{const a=b.dataset.action;closeModerationModal();resolve(a)});
+  });
+}
+function chooseReportReason(name){
+  return new Promise(resolve=>{
+    const reasons=["إساءة أو سب","تحرش أو مضايقة","حساب مزيف أو انتحال شخصية","محتوى غير لائق","طلب مال أو احتيال","رسائل مزعجة","مخالفة شروط الموقع","سبب آخر"];
+    const modal=document.createElement("div");
+    modal.className="moderation-modal";
+    modal.innerHTML='<div class="moderation-card" role="dialog" aria-modal="true"><div class="moderation-head"><strong>سبب الإبلاغ</strong><button type="button" class="moderation-close">×</button></div><p class="moderation-name">اختر سبب الإبلاغ عن '+escapeHtml(name||"العضو")+'</p><div class="moderation-options">'+reasons.map((r,i)=>'<button type="button" data-reason="'+i+'">'+escapeHtml(r)+'</button>').join("")+'<button type="button" data-reason="-1">إلغاء</button></div></div>';
+    document.body.appendChild(modal);
+    modal.querySelector(".moderation-close").onclick=()=>{closeModerationModal();resolve(null)};
+    modal.onclick=e=>{if(e.target===modal){closeModerationModal();resolve(null)}};
+    modal.querySelectorAll("[data-reason]").forEach(b=>b.onclick=()=>{const n=Number(b.dataset.reason);closeModerationModal();resolve(n>=0?reasons[n]:null)});
+  });
+}
+async function blockUser(id){
+  if(!id||id===state.user.id)return;
+  const p=state.profiles.find(x=>x.id===id)||state.selectedUser; const name=p?.username||"هذا العضو";
+  const choice=await showModerationChoice(id,name); if(choice!=="block")return;
+  if(!confirm("هل تريد حظر "+name+"؟"))return;
+  const {error}=await supabaseClient.from("profile_blocks").upsert({user_id:state.user.id,blocked_id:id},{onConflict:"user_id,blocked_id"});
+  if(error){alert("تعذر الحظر: "+error.message);return}
+  state.blockedIds.add(id);state.selectedUser=null;$("#message").value="";$("#message").disabled=true;$(".send-btn").disabled=true;
+  const h=document.querySelector(".room-head");if(h)h.hidden=true;await loadProfiles();
+  document.querySelector(".chat-sidebar")?.classList.remove("mobile-hidden");document.querySelector(".room")?.classList.remove("mobile-active");
+}
+async function unblockUser(id){
+  if(!id)return;
+  const p=state.profiles.find(x=>x.id===id); const name=p?.username||"هذا العضو";
+  const choice=await showModerationChoice(id,name); if(choice!=="block")return;
+  const {error}=await supabaseClient.from("profile_blocks").delete().eq("user_id",state.user.id).eq("blocked_id",id);
+  if(error){alert("تعذر فك الحظر: "+error.message);return}
+  state.blockedIds.delete(id);await loadProfiles();
+}
+async function reportUser(id,name){
+  if(!id||id===state.user.id)return;
+  const reason=await chooseReportReason(name); if(!reason)return;
+  const {error}=await supabaseClient.from("profile_reports").insert({reporter_id:state.user.id,reported_id:id,reason,details:null});
+  if(error){alert("تعذر إرسال البلاغ: "+error.message);return}
+  alert("تم إرسال البلاغ للإدارة للمراجعة.");
+}
+async function showModerationMenu(id,name){
+  const choice=await showModerationChoice(id,name);
+  if(choice==="block"){if(state.blockedIds.has(id))await unblockUserDirect(id);else await blockUserDirect(id)}
+  else if(choice==="report")await reportUserDirect(id,name);
+}
+async function blockUserDirect(id){
+  if(!id||id===state.user.id)return;
+  const {error}=await supabaseClient.from("profile_blocks").upsert({user_id:state.user.id,blocked_id:id},{onConflict:"user_id,blocked_id"});
+  if(error){alert("تعذر الحظر: "+error.message);return}
+  state.blockedIds.add(id);state.selectedUser=null;$("#message").value="";$("#message").disabled=true;$(".send-btn").disabled=true;
+  const h=document.querySelector(".room-head");if(h)h.hidden=true;await loadProfiles();
+  document.querySelector(".chat-sidebar")?.classList.remove("mobile-hidden");document.querySelector(".room")?.classList.remove("mobile-active");
+}
+async function unblockUserDirect(id){
+  const {error}=await supabaseClient.from("profile_blocks").delete().eq("user_id",state.user.id).eq("blocked_id",id);
+  if(error){alert("تعذر فك الحظر: "+error.message);return}
+  state.blockedIds.delete(id);await loadProfiles();
+}
+async function reportUserDirect(id,name){
+  const reason=await chooseReportReason(name);if(!reason)return;
+  const {error}=await supabaseClient.from("profile_reports").insert({reporter_id:state.user.id,reported_id:id,reason,details:null});
+  if(error){alert("تعذر إرسال البلاغ: "+error.message);return}
+  alert("تم إرسال البلاغ للإدارة للمراجعة.");
+}
 async function sendMessage(e){e.preventDefault();if(!state.selectedUser)return msg("اختر عضوًا أولًا.");const input=$("#message");const body=input.value.trim();if(!body)return;const recipientId=state.selectedUser.id;const {error}=await supabaseClient.from("messages").insert({sender_id:state.user.id,recipient_id:recipientId,body});if(error){console.error("sendMessage:",error);msg("تعذر إرسال الرسالة: "+error.message);return}input.value="";const {data:check,error:checkError}=await supabaseClient.from("messages").select("id,sender_id,recipient_id,body,created_at,edited_at,deleted_at").or("and(sender_id.eq."+state.user.id+",recipient_id.eq."+recipientId+"),and(sender_id.eq."+recipientId+",recipient_id.eq."+state.user.id+")").order("created_at",{ascending:true});if(!checkError){state.messages=check||[];renderMessages()}else{console.error("reload messages:",checkError);msg("تم الإرسال، لكن تعذر تحديث المحادثة.");}}
 async function adminApi(action,extra={}){const {data,error}=await supabaseClient.functions.invoke("admin-control",{body:{action,...extra}});if(error)throw error;if(data?.error)throw new Error(data.error);return data}
 async function initAdminAccess(){const b=$("#adminNav");if(!b)return;try{const data=await adminApi("me");if(data?.is_admin){b.hidden=false;b.onclick=()=>{window.open("admin.html","nour-el7alal-admin");};return true}}catch(e){b.hidden=true}return false}
