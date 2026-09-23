@@ -108,3 +108,7 @@
   .back-members{display:block}
   .room-head{gap:8px!important}
 }
+
+.moderation-modal{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(3px)}
+.moderation-card{width:min(430px,100%);background:#17232b;border:1px solid #34444d;border-radius:18px;box-shadow:0 20px 70px rgba(0,0,0,.55);overflow:hidden;color:#eaf3f6;direction:rtl}.moderation-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #2b3941;font-size:18px}.moderation-close{border:0;background:transparent;color:#dce7eb;font-size:27px;cursor:pointer}.moderation-name{padding:12px 18px 4px;margin:0;color:#aebdc3}.moderation-options{display:grid;gap:9px;padding:14px 18px 18px}.moderation-options button{border:1px solid #34464f;background:#202f38;color:#edf5f7;border-radius:12px;padding:13px 14px;font-size:15px;text-align:right;cursor:pointer}.moderation-options button:hover{background:#2b3d46}.moderation-options button[data-action="block"]{border-color:#70454b}.moderation-options button[data-action="report"]{border-color:#725f3d}
+@media(max-width:600px){.moderation-card{border-radius:16px}.moderation-options button{padding:14px;font-size:16px}}
