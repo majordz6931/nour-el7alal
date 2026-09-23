@@ -7,7 +7,7 @@ const state={user:null,profile:null,selectedUser:null,messages:[],profiles:[],ch
 $("#wilaya").innerHTML='<option value="">اختر ولايتك</option>'+wilayas.map(x=>'<option>'+x+'</option>').join("");
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");const reg=b.dataset.tab==="register";$("#registerForm").hidden=!reg;$("#loginForm").hidden=reg;$("#authMsg").textContent=""});
 function msg(t){$("#authMsg").textContent=t||""}
-function internalEmail(username){const bytes=new TextEncoder().encode(username.trim().toLowerCase());return Array.from(bytes).map(b=>b.toString(16).padStart(2,"0")).join("")+"@users.nour-el7alal.invalid"}
+function internalEmail(username){const bytes=new TextEncoder().encode(username.trim().toLowerCase());return Array.from(bytes).map(b=>b.toString(16).padStart(2,"0")).join("")+"@nour-el7alal.com"}
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function compressImage(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const size=600,c=document.createElement("canvas"),scale=Math.min(size/img.width,size/img.height,1);c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));c.getContext("2d").drawImage(img,0,0,c.width,c.height);c.toBlob(b=>b?resolve(b):reject(new Error("image")),"image/jpeg",.82)};img.onerror=()=>reject(new Error("image"));img.src=r.result};r.onerror=()=>reject(new Error("file"));r.readAsDataURL(file)})}
 const photoInput=$("#profilePhoto"),photoPreview=$("#profilePreview");
