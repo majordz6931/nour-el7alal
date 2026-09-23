@@ -30,6 +30,8 @@
     <label>تأكيد كلمة المرور<input id="confirmPassword" type="password" required autocomplete="new-password"></label>
     <label>العمر<input id="age" type="number" min="18" max="100" required></label>
     <label>الولاية<select id="wilaya" required></select></label>
+    <label>صورة البروفايل<input id="profilePhoto" type="file" accept="image/jpeg,image/png,image/webp" required><small class="help">الصورة مطلوبة لإكمال إنشاء الحساب.</small></label>
+    <img id="profilePreview" class="profile-preview" alt="معاينة صورة البروفايل" hidden>
     <label class="check"><input type="checkbox" required> <span>أؤكد أن عمري 18 سنة أو أكثر وأوافق على احترام الآخرين.</span></label>
     <button class="primary" type="submit">إنشاء حساب</button>
   </form>
