@@ -1,9 +1,0 @@
-{
-  "name": "major-digital-store",
-  "version": "3.0.0",
-  "private": true,
-  "description": "MAJOR STORE — digital products storefront with dashboard and Supabase sync",
-  "scripts": {
-    "start": "python3 -m http.server 8080"
-  }
-}
