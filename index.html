@@ -44,19 +44,9 @@
 </section>
 
 <section class="card chat" id="chatView" hidden>
-<header>
-  <div><strong>نور الحلال</strong><small id="me"></small></div>
-  <button class="ghost" id="logout">تسجيل الخروج</button>
-</header>
-<div class="notice">🤝 تعارف باحترام • 🚫 الإبلاغ والحظر • 🔒 الخصوصية مهمة</div>
-<div class="layout">
-<aside><h3>الأعضاء</h3><div id="users"></div></aside>
-<div class="room">
-<div class="messages" id="messages"></div>
-<form class="send" id="messageForm"><input id="message" placeholder="اكتب رسالتك..." maxlength="500" autocomplete="off"><button class="primary" type="submit">إرسال</button></form>
-</div>
-</div>
-</section>
+<header class="chat-top"><div class="brand-mini"><div class="brand-dot">ن</div><div><strong>نور الحلال</strong><small id="me"></small></div></div><div class="top-actions"><button class="icon-btn" id="searchToggle">⌕</button><button class="ghost" id="logout">تسجيل الخروج</button></div></header>
+<div class="chat-app"><aside class="chat-sidebar"><div class="sidebar-title"><h3>المحادثات</h3><button class="icon-btn" id="newChat">＋</button></div><div class="search-box" id="searchBox" hidden><input id="userSearch" placeholder="ابحث عن عضو..."></div><div class="online-title">متصلون الآن <span id="onlineCount">4</span></div><div id="users"></div></aside>
+<section class="room"><div class="room-head"><div class="active-avatar">ن</div><div><strong id="roomName">القاعة العامة</strong><small id="roomStatus">تعارف باحترام • متصلون الآن</small></div><button class="icon-btn" id="roomMore">⋮</button></div><div class="messages" id="messages"></div><div class="typing" id="typing" hidden>يكتب الآن…</div><form class="send" id="messageForm"><button type="button" class="attach" id="emojiBtn">☺</button><input id="message" placeholder="اكتب رسالة محترمة..." maxlength="500" autocomplete="off"><button class="send-btn" type="submit">إرسال ➤</button></form><div class="quick-replies" id="quickReplies"><button type="button">السلام عليكم 👋</button><button type="button">كيف حالك؟</button><button type="button">من أي ولاية؟</button></div></section></div><div class="safety-bar">🔒 لا تشارك كلمة السر أو معلوماتك البنكية • 🚫 يمكنك الإبلاغ والحظر في أي وقت</div></section>
 </main>
 <script src="app.js"></script>
 </body>
