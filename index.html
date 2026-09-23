@@ -25,8 +25,7 @@
   </div>
   <form id="registerForm">
     <label>اسم المستخدم<input id="username" required minlength="3" maxlength="30" autocomplete="username"></label>
-    <label>البريد الإلكتروني<input id="email" type="email" required autocomplete="email" placeholder="example@email.com"></label>
-    <label>كلمة المرور<input id="password" type="password" required minlength="6" autocomplete="new-password"></label>
+        <label>كلمة المرور<input id="password" type="password" required minlength="6" autocomplete="new-password"></label>
     <label>تأكيد كلمة المرور<input id="confirmPassword" type="password" required autocomplete="new-password"></label>
     <label>العمر<input id="age" type="number" min="18" max="100" required></label>
     <label>الولاية<select id="wilaya" required></select></label>
@@ -36,7 +35,7 @@
     <button class="primary" type="submit">إنشاء حساب</button>
   </form>
   <form id="loginForm" hidden>
-    <label>البريد الإلكتروني<input id="loginEmail" type="email" required autocomplete="email"></label>
+    <label>اسم المستخدم<input id="loginUsername" required autocomplete="username"></label>
     <label>كلمة المرور<input id="loginPassword" type="password" required autocomplete="current-password"></label>
     <button class="primary" type="submit">دخول</button>
   </form>
