@@ -59,14 +59,21 @@ function showModerationChoice(id,name){
 }
 function chooseReportReason(name){
   return new Promise(resolve=>{
+    closeModerationModal();
     const reasons=["إساءة أو سب","تحرش أو مضايقة","حساب مزيف أو انتحال شخصية","محتوى غير لائق","طلب مال أو احتيال","رسائل مزعجة","مخالفة شروط الموقع","سبب آخر"];
     const modal=document.createElement("div");
     modal.className="moderation-modal";
-    modal.innerHTML='<div class="moderation-card" role="dialog" aria-modal="true"><div class="moderation-head"><strong>سبب الإبلاغ</strong><button type="button" class="moderation-close">×</button></div><p class="moderation-name">اختر سبب الإبلاغ عن '+escapeHtml(name||"العضو")+'</p><div class="moderation-options">'+reasons.map((r,i)=>'<button type="button" data-reason="'+i+'">'+escapeHtml(r)+'</button>').join("")+'<button type="button" data-reason="-1">إلغاء</button></div></div>';
+    modal.innerHTML='<div class="moderation-card" role="dialog" aria-modal="true"><div class="moderation-head"><strong>⚠️ إبلاغ عن العضو</strong><button type="button" class="moderation-close">×</button></div><p class="moderation-name">اختر سبب الإبلاغ عن '+escapeHtml(name||"العضو")+'</p><select class="moderation-select" id="reportReason"><option value="">اختر سبب الإبلاغ...</option>'+reasons.map((r,i)=>'<option value="'+i+'">'+escapeHtml(r)+'</option>').join("")+'</select><div class="moderation-footer"><button type="button" class="moderation-cancel">إلغاء</button><button type="button" class="moderation-confirm">إرسال البلاغ</button></div></div>';
     document.body.appendChild(modal);
-    modal.querySelector(".moderation-close").onclick=()=>{closeModerationModal();resolve(null)};
-    modal.onclick=e=>{if(e.target===modal){closeModerationModal();resolve(null)}};
-    modal.querySelectorAll("[data-reason]").forEach(b=>b.onclick=()=>{const n=Number(b.dataset.reason);closeModerationModal();resolve(n>=0?reasons[n]:null)});
+    const finish=v=>{closeModerationModal();resolve(v)};
+    modal.querySelector(".moderation-close").onclick=()=>finish(null);
+    modal.querySelector(".moderation-cancel").onclick=()=>finish(null);
+    modal.onclick=ev=>{if(ev.target===modal)finish(null)};
+    modal.querySelector(".moderation-confirm").onclick=()=>{
+      const n=Number(modal.querySelector("#reportReason").value);
+      if(!Number.isInteger(n)||n<0){alert("اختر سبب الإبلاغ أولاً.");return}
+      finish(reasons[n]);
+    };
   });
 }
 async function blockUser(id){
