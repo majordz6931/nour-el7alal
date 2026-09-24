@@ -1,88 +1,29 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="موقع النور - تعارف جاد وشات محترم بنية الزواج في الجزائر">
-  <title>موقع النور | تعارف وشات للزواج في الجزائر</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-<header class="topbar">
-  <a class="brand" href="#"><span class="brand-mark">ن</span><span>موقع النور</span></a>
-  <nav class="nav"><a href="#people">الأشخاص</a><a href="#how">كيف يعمل؟</a><a href="#values">قيمنا</a></nav>
-  <button class="btn btn-outline" id="loginBtn">تسجيل الدخول</button>
-</header>
-
-<main>
-<section class="hero">
-  <div class="hero-content">
-    <span class="eyebrow">🇩🇿 تعارف جاد • شات • زواج</span>
-    <h1>تعارف محترم<br><span>على طريق الحلال</span></h1>
-    <p>موقع النور مساحة جزائرية للتعارف الجاد والمحادثة الخاصة. تعرّف على أشخاص، شاهد ملفاتهم، أرسل إعجابًا أو أضفهم كأصدقاء وابدأ الحديث باحترام.</p>
-    <div class="hero-actions"><button class="btn btn-primary" id="joinBtn">إنشاء حساب</button><a class="btn btn-soft" href="#people">اكتشف الأشخاص</a></div>
-    <div class="trust-row"><span>✓ ملفات شخصية</span><span>✓ إعجاب وأصدقاء</span><span>✓ شات خاص</span></div>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="موقع النور - تعارف جاد وشات محترم بنية الزواج في الجزائر"><title>موقع النور | تسجيل الدخول</title><link rel="stylesheet" href="style.css"></head>
+<body class="auth-page">
+<div class="auth-shell">
+  <div class="auth-brand"><span class="brand-mark">ن</span><div><strong>موقع النور</strong><small>تعارف جاد وشات للزواج في الجزائر</small></div></div>
+  <div class="auth-card">
+    <div class="auth-tabs"><button class="auth-tab active" id="loginTab">تسجيل الدخول</button><button class="auth-tab" id="signupTab">إنشاء حساب</button></div>
+    <section id="loginForm">
+      <span class="eyebrow">مرحبًا بعودتك</span><h1>سجّل الدخول</h1><p>ادخل إلى حسابك لمشاهدة الأشخاص والتواصل معهم.</p>
+      <label>اسم المستخدم<input id="loginUsername" type="text" placeholder="اسم المستخدم" autocomplete="username"></label>
+      <label>كلمة المرور<input id="loginPassword" type="password" placeholder="كلمة المرور" autocomplete="current-password"></label>
+      <button class="btn btn-primary full" id="loginSubmit">تسجيل الدخول</button>
+    </section>
+    <section id="signupForm" class="hidden-form">
+      <span class="eyebrow">انضم إلى موقع النور</span><h1>إنشاء حساب</h1><p>أنشئ حسابًا مجانيًا وابدأ التعارف بشكل محترم.</p>
+      <label>اسم المستخدم<input id="signupUsername" type="text" placeholder="مثال: mohamed31" autocomplete="username"></label>
+      <label>كلمة المرور<input id="signupPassword" type="password" placeholder="6 أحرف على الأقل" autocomplete="new-password"></label>
+      <label>تاريخ الميلاد<input id="signupDob" type="date"></label>
+      <label>الولاية<select id="signupWilaya"><option value="">اختر الولاية</option><option>الجزائر</option><option>البليدة</option><option>وهران</option><option>قسنطينة</option><option>سطيف</option><option>تيزي وزو</option><option>بجاية</option><option>بومرداس</option><option>عنابة</option><option>باتنة</option><option>المسيلة</option><option>البويرة</option></select></label>
+      <div class="two-fields"><label>الجنس<select id="signupGender"><option value="">اختر</option><option value="male">رجل</option><option value="female">امرأة</option></select></label><label>أبحث عن<select id="signupSeeking"><option value="">اختر</option><option value="male">رجل</option><option value="female">امرأة</option></select></label></div>
+      <button class="btn btn-primary full" id="signupSubmit">إنشاء الحساب</button>
+    </section>
+    <div class="auth-message" id="authMessage"></div>
+    <a class="back-link" href="javascript:void(0)" id="guestLink">← متابعة بدون حساب</a>
   </div>
-  <div class="hero-card">
-    <div class="phone">
-      <div class="phone-head"><span class="dot"></span><span>الأشخاص المتصلون</span><span class="count">12 متصل</span></div>
-      <div class="mini-person"><span class="avatar a1">س</span><div><b>سارة</b><small>الجزائر العاصمة · 27 سنة</small></div><span class="online">متصلة</span></div>
-      <div class="mini-person"><span class="avatar a2">م</span><div><b>محمد</b><small>البليدة · 31 سنة</small></div><span class="online">متصل</span></div>
-      <div class="mini-person"><span class="avatar a3">أ</span><div><b>أمينة</b><small>وهران · 25 سنة</small></div><span class="online">متصلة</span></div>
-      <div class="chat-preview"><span>💬</span><div><b>مراسلة خاصة</b><small>تواصل مع من يناسبك باحترام.</small></div></div>
-    </div>
-  </div>
-</section>
-
-<section class="section" id="people">
-  <div class="section-title"><span class="eyebrow">تعرّف على الأعضاء</span><h2>أشخاص جدد بانتظار التعارف</h2><p>يمكنك مشاهدة الملف، الإعجاب، إضافة صديق أو بدء محادثة.</p></div>
-  <div class="people-grid">
-    <article class="person-card" data-name="سارة" data-age="27" data-wilaya="الجزائر العاصمة" data-bio="أبحث عن تعارف جاد ومحترم بنية الزواج. أحب الهدوء والعائلة.">
-      <div class="person-cover cover1"><span class="avatar big">س</span><span class="online-badge">متصلة الآن</span></div>
-      <div class="person-body"><h3>سارة <small>27 سنة</small></h3><p>📍 الجزائر العاصمة</p><p class="bio">تعارف جاد بنية الزواج.</p>
-        <div class="card-actions"><button class="action view-profile">👤 عرض الملف</button><button class="action like">♡ إعجاب</button><button class="action friend">🤝 إضافة صديق</button><button class="action chat">💬 مراسلة</button></div>
-      </div>
-    </article>
-    <article class="person-card" data-name="محمد" data-age="31" data-wilaya="البليدة" data-bio="شخص هادئ وجاد، أبحث عن شريكة حياة مناسبة للتعارف المحترم.">
-      <div class="person-cover cover2"><span class="avatar big">م</span><span class="online-badge">متصل الآن</span></div>
-      <div class="person-body"><h3>محمد <small>31 سنة</small></h3><p>📍 البليدة</p><p class="bio">الاحترام والنية الجادة أهم شيء.</p>
-        <div class="card-actions"><button class="action view-profile">👤 عرض الملف</button><button class="action like">♡ إعجاب</button><button class="action friend">🤝 إضافة صديق</button><button class="action chat">💬 مراسلة</button></div>
-      </div>
-    </article>
-    <article class="person-card" data-name="أمينة" data-age="25" data-wilaya="وهران" data-bio="أرغب في التعارف الجاد مع شخص يحترم الأسرة ويبحث عن الاستقرار.">
-      <div class="person-cover cover3"><span class="avatar big">أ</span><span class="online-badge">متصلة الآن</span></div>
-      <div class="person-body"><h3>أمينة <small>25 سنة</small></h3><p>📍 وهران</p><p class="bio">أبحث عن الاستقرار وتكوين أسرة.</p>
-        <div class="card-actions"><button class="action view-profile">👤 عرض الملف</button><button class="action like">♡ إعجاب</button><button class="action friend">🤝 إضافة صديق</button><button class="action chat">💬 مراسلة</button></div>
-      </div>
-    </article>
-    <article class="person-card" data-name="ياسين" data-age="33" data-wilaya="قسنطينة" data-bio="أبحث عن علاقة جادة تنتهي بالزواج، وأقدّر الصراحة والاحترام.">
-      <div class="person-cover cover4"><span class="avatar big">ي</span><span class="online-badge">متصل الآن</span></div>
-      <div class="person-body"><h3>ياسين <small>33 سنة</small></h3><p>📍 قسنطينة</p><p class="bio">تعارف واضح ومحترم.</p>
-        <div class="card-actions"><button class="action view-profile">👤 عرض الملف</button><button class="action like">♡ إعجاب</button><button class="action friend">🤝 إضافة صديق</button><button class="action chat">💬 مراسلة</button></div>
-      </div>
-    </article>
-  </div>
-</section>
-
-<section class="section" id="how">
-  <div class="section-title"><span class="eyebrow">بخطوات بسيطة</span><h2>كيف يعمل موقع النور؟</h2></div>
-  <div class="steps"><article><span>01</span><h3>أنشئ حسابك</h3><p>أضف معلوماتك الأساسية وصورتك وولايتك وهدفك من التعارف.</p></article><article><span>02</span><h3>تعرّف على الأشخاص</h3><p>شاهد الملفات، أرسل إعجابًا، أضف أصدقاء أو ابدأ محادثة.</p></article><article><span>03</span><h3>تحدث باحترام</h3><p>شات خاص بين الطرفين مع إمكانيات الحظر والتبليغ والخصوصية.</p></article></div>
-</section>
-
-<section class="values" id="values">
-  <div><span class="eyebrow">قيم موقع النور</span><h2>الاحترام أولًا، والنية واضحة.</h2><p>الموقع مخصص للتعارف والشات الجاد فقط، وليس لنشر عروض أو بيع وشراء.</p></div>
-  <div class="value-list"><div><b>🔒 الخصوصية</b><span>ملفك ومحادثاتك ضمن تجربة مصممة للخصوصية.</span></div><div><b>🤝 الأصدقاء والإعجاب</b><span>ابنِ قائمة أصدقاء وتابع التفاعلات مع ملفك.</span></div><div><b>💬 شات خاص</b><span>مراسلة مباشرة بين المستخدمين مع أدوات الحماية.</span></div></div>
-</section>
-
-<section class="join" id="join"><div><span class="eyebrow">ابدأ الآن</span><h2>تعارف جاد، شات محترم، وهدف واضح.</h2><p>أنشئ حسابك وابدأ اكتشاف الأشخاص المناسبين.</p></div><button class="btn btn-primary" id="joinBtn2">إنشاء حساب مجاني</button></section>
-</main>
-
-<footer><div class="brand"><span class="brand-mark">ن</span><span>موقع النور</span></div><span>© 2026 موقع النور — تعارف وشات للزواج في الجزائر</span></footer>
-
-<div class="modal hidden" id="authModal"><div class="modal-box"><button class="close" id="closeModal">×</button><span class="eyebrow">الخطوة التالية</span><h2>إنشاء حساب في موقع النور</h2><p>واجهة التعارف جاهزة. سنربط التسجيل والشات وقاعدة البيانات في المرحلة التالية.</p><button class="btn btn-primary full" id="modalOk">حسنًا</button></div></div>
-
-<div class="modal hidden" id="profileModal"><div class="modal-box profile-modal"><button class="close" id="closeProfile">×</button><div class="profile-modal-head"><span class="avatar big" id="modalAvatar">س</span><div><span class="online">● متصل الآن</span><h2 id="profileName">سارة</h2><p id="profileMeta"></p></div></div><div class="profile-info"><h3>نبذة</h3><p id="profileBio"></p></div><div class="profile-actions"><button class="btn btn-primary" id="modalChat">💬 مراسلة</button><button class="btn btn-soft" id="modalLike">♡ إعجاب</button><button class="btn btn-soft" id="modalFriend">🤝 إضافة صديق</button></div></div></div>
-
-<script src="app.js"></script>
-</body>
-</html>
+  <p class="auth-note">🔒 التسجيل مطلوب للوصول إلى الملفات الشخصية والشات والإعجاب وإضافة الأصدقاء.</p>
+</div>
+<script src="app.js"></script></body></html>
