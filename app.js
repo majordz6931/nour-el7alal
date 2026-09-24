@@ -5,7 +5,7 @@ const wilayas=["أدرار","الشلف","الأغواط","أم البواقي",
 const $=s=>document.querySelector(s);
 const state={user:null,profile:null,selectedUser:null,messages:[],profiles:[],channel:null,notificationChannel:null,presenceChannel:null,unread:{},presenceTimer:null,blockedIds:new Set(),likedIds:new Set(),likedByIds:new Set(),mutualLikeIds:new Set()};
 $("#wilaya").innerHTML='<option value="">اختر ولايتك</option>'+wilayas.map(x=>'<option>'+x+'</option>').join("");
-document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");const reg=b.dataset.tab==="register";$("#registerForm").hidden=!reg;$("#loginForm").hidden=reg;$("#authMsg").textContent=""});
+function switchAuthTab(tab){const reg=tab==="register";document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("active",x.dataset.tab===tab));$("#registerForm").hidden=!reg;$("#loginForm").hidden=reg;$("#authMsg").textContent="";if(!reg)$("#loginUsername")?.focus()}document.querySelectorAll(".tabs button").forEach(b=>b.onclick=e=>{e.preventDefault();switchAuthTab(b.dataset.tab)});
 function msg(t){$("#authMsg").textContent=t||""}
 function internalEmail(username){const bytes=new TextEncoder().encode(username.trim().toLowerCase());return Array.from(bytes).map(b=>b.toString(16).padStart(2,"0")).join("")+"@nour-el7alal.com"}
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -433,4 +433,6 @@ function initChatUX(){if(window.chatUX)return;window.chatUX=true;document.queryS
 async function boot(){const {data}=await supabaseClient.auth.getSession();if(data.session){try{await loadProfile(data.session.user.id);await showChat()}catch(err){console.error(err);await supabaseClient.auth.signOut()}}supabaseClient.auth.onAuthStateChange(async(event,session)=>{if(session&&!state.profile){try{await loadProfile(session.user.id);await showChat()}catch(err){console.error(err)}}})}
 $("#registerForm").onsubmit=register;
 $("#loginForm").onsubmit=login;
+window.nourLogin=login;
+window.nourSwitchAuthTab=switchAuthTab;
 boot();
