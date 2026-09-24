@@ -422,3 +422,7 @@
  .likes-summary span{font-size:12px;padding:7px 9px}
  .request-tabs{gap:6px}
 }
+
+
+.profile-like-count{display:inline-flex;align-items:center;justify-content:center;margin:4px auto 16px;padding:7px 13px;border-radius:999px;background:#1c3038;border:1px solid #36515b;color:#f1d9dc;font-weight:800;font-size:13px}
+.like-count-mini{font-weight:700!important}
