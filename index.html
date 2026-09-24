@@ -1406,5 +1406,10 @@ setInterval(()=>{
   if(document.getElementById('screen-app').classList.contains('active')){renderConvList();updateOnlineCount();}
 },14000);
 </script>
+
+<!-- Supabase production authentication + persistent session -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-bridge.js"></script>
+<script src="./supabase-fix.js"></script>
 </body>
 </html>
