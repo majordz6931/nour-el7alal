@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>نور الحلال</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar"><div class="brand">🌙 نور الحلال</div><button id="logoutBtn" class="ghost hidden">خروج</button></header>
+<main>
+<section id="authView" class="card auth">
+<h1>نور الحلال</h1><p class="muted">تعارف جاد باحترام وخصوصية</p>
+<div class="tabs"><button class="tab active" data-tab="login">دخول</button><button class="tab" data-tab="signup">حساب جديد</button></div>
+<form id="authForm">
+<input id="email" type="email" placeholder="البريد الإلكتروني" required>
+<input id="password" type="password" placeholder="كلمة المرور" minlength="6" required>
+<div id="signupFields" class="hidden"><input id="username" placeholder="اسم المستخدم" minlength="3"><input id="fullName" placeholder="الاسم الكامل"></div>
+<button class="primary" type="submit" id="authSubmit">تسجيل الدخول</button>
+</form><p id="authMsg" class="msg"></p>
+</section>
+<section id="appView" class="hidden">
+<div class="grid">
+<div class="card"><h2>ملفي الشخصي</h2>
+<form id="profileForm">
+<input id="pUsername" placeholder="اسم المستخدم" required>
+<input id="pFullName" placeholder="الاسم الكامل">
+<input id="pAge" type="number" min="18" max="100" placeholder="العمر">
+<input id="pWilaya" placeholder="الولاية">
+<select id="pGender"><option value="">الجنس</option><option value="male">رجل</option><option value="female">امرأة</option></select>
+<textarea id="pBio" placeholder="نبذة عنك"></textarea>
+<button class="primary">حفظ الملف</button>
+</form><p id="profileMsg" class="msg"></p></div>
+<div class="card"><h2>المستخدمون</h2><input id="search" placeholder="ابحث باسم أو ولاية"><div id="users" class="users"></div></div>
+</div>
+<div class="card chat"><h2 id="chatTitle">المحادثة</h2><div id="messages" class="messages"></div><form id="messageForm"><input id="messageInput" placeholder="اكتب رسالة..." maxlength="5000" required><button class="primary">إرسال</button></form></div>
+</section>
+</main>
+<script type="module" src="app.js"></script>
+</body></html>
