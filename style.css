@@ -345,3 +345,36 @@
     max-height:360px;
   }
 }
+
+
+/* Desktop chat — larger workspace */
+@media (min-width:701px){
+  .shell{
+    width:min(1600px,calc(100% - 32px));
+    max-width:1600px;
+    padding-top:16px;
+  }
+  .chat{
+    max-width:1600px;
+    width:100%;
+    border-radius:16px!important;
+  }
+  .chat-app{
+    grid-template-columns:360px minmax(0,1fr)!important;
+    height:calc(100vh - 210px);
+    min-height:720px;
+    max-height:calc(100vh - 110px);
+  }
+  #users{
+    height:calc(100% - 126px);
+  }
+  .room{
+    min-width:0;
+  }
+  .messages{
+    padding:32px 10%!important;
+  }
+  .bubble{
+    max-width:min(58%,720px)!important;
+  }
+}
