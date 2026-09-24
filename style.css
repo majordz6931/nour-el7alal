@@ -144,3 +144,6 @@
  .room .quick-replies{flex:0 0 auto!important;min-height:0!important}
  .room .safety-bar{flex:0 0 auto!important}
 }
+
+/* Remove bottom whitespace below chat on phones */
+@media(max-width:700px){body{overflow-x:hidden!important}.shell{padding-bottom:0!important}#chatView{margin-bottom:0!important;min-height:0!important}#chatView .chat-app{margin-bottom:0!important}#chatView .safety-bar{margin-bottom:0!important}}
