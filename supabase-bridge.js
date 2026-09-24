@@ -135,6 +135,7 @@ function usernameEmail(username){return "u_"+Array.from(new TextEncoder().encode
       if(calcAge(d)<18){showToast("⚠️ يجب أن يكون عمرك 18 سنة على الأقل");return;}
       const data=await usernameAuth("signup",{username:u,password:p,date_of_birth:d,wilaya:w,gender:g,seeking:g==="male"?"female":"male"});
       currentUser=mapProfile({id:data.user.id,username:u,date_of_birth:d,wilaya:w,gender:g,bio:b,created_at:new Date().toISOString()});
+      saveCurrentUser();
       if(file){
         const path=await uploadFile("avatars",currentUser.id,file,"avatar");
         const {data:pub}=sb.storage.from("avatars").getPublicUrl(path);
@@ -147,7 +148,7 @@ function usernameEmail(username){return "u_"+Array.from(new TextEncoder().encode
   }
   async function logoutReal(){
     try{await setPresence(false);await sb.auth.signOut();}catch(_){}
-    currentUser=null;currentChatUser=null;window.__nourChatSig='';
+    currentUser=null;currentChatUser=null;window.__nourChatSig=''; try{localStorage.removeItem("nour_current_user");localStorage.removeItem("nour_auth_session");}catch(_){}
     if(realtimeChannel){try{await sb.removeChannel(realtimeChannel);}catch(_){} realtimeChannel=null;}
     document.getElementById("screen-app").classList.remove("active");
     document.getElementById("screen-admin").classList.remove("active");
@@ -391,12 +392,22 @@ function usernameEmail(username){return "u_"+Array.from(new TextEncoder().encode
   async function resolveReportReal(id){const {error}=await sb.from("reports").update({status:"resolved"}).eq("id",id);if(error)showToast("❌ "+safeErr(error));else{showToast("✅ تمت المعالجة");renderAdminReportsReal();}}
   function renderAdminChatReal(){renderAdminChat();}
   let bootDone=false;
+  function saveCurrentUser(){try{if(currentUser)localStorage.setItem("nour_current_user",JSON.stringify(currentUser));}catch(_){}}
+  function restoreCachedUser(){
+    try{
+      const raw=localStorage.getItem("nour_current_user"); if(!raw)return false;
+      const p=JSON.parse(raw); if(!p?.id||!p?.username)return false;
+      currentUser=p; openApp(); return true;
+    }catch(_){return false}
+  }
+
   async function restoreSession(session){
     if(bootDone||!session?.user?.id)return false;
     try{
       const {data:p,error}=await sb.from("profiles").select("*").eq("id",session.user.id).maybeSingle();
       if(error||!p){console.warn("Supabase profile restore:",error||"profile not found");return false;}
       currentUser=mapProfile(p);
+      saveCurrentUser();
       if(p.banned){await sb.auth.signOut();return false;}
       currentUser.role=session.user.app_metadata?.role==="admin"?"admin":currentUser.role;
       bootDone=true;
@@ -413,6 +424,9 @@ function usernameEmail(username){return "u_"+Array.from(new TextEncoder().encode
   }
 
   async function boot(){
+    if(restoreCachedUser()){
+      try{const {data:{session}}=await sb.auth.getSession(); if(session&&await restoreSession(session))return;}catch(_){ }
+    }
     for(let attempt=0;attempt<10&&!bootDone;attempt++){
       try{
         const {data:{session}}=await sb.auth.getSession();
