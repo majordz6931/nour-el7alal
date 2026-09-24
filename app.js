@@ -173,7 +173,7 @@ async function sendVoiceMessage(blob){
 }
 async function sendChatImage(file){
  const recipientId=state.selectedUser?.id;if(!recipientId||!file)return;
- if(!/^image\\/(jpeg|png|webp|gif)$/i.test(file.type)){msg("اختر صورة JPG أو PNG أو WEBP أو GIF.");return}
+ if(!/^image\/(jpeg|png|webp|gif)$/i.test(file.type)){msg("اختر صورة JPG أو PNG أو WEBP أو GIF.");return}
  if(file.size>10*1024*1024){msg("حجم الصورة يجب أن يكون أقل من 10 ميغابايت.");return}
  try{
   // أرسل الصورة الأصلية بدون Canvas/ضغط حتى لا تتغير الدقة أو الجودة.
