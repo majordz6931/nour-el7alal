@@ -113,7 +113,33 @@ function startNotifications(){
  if("Notification" in window&&Notification.permission==="default")Notification.requestPermission().catch(()=>{});
 }
 async function register(e){e.preventDefault();const username=$("#username").value.trim(),password=$("#password").value,age=Number($("#age").value),wilaya=$("#wilaya").value,photo=photoInput?.files?.[0];if(!photo)return msg("لازم تختار صورة بروفايل.");if(password!==$("#confirmPassword").value)return msg("كلمتا المرور غير متطابقتين.");if(age<18)return msg("الموقع مخصص لمن أعمارهم 18 سنة أو أكثر.");if(!wilaya)return msg("اختر الولاية.");if(!/^[\p{L}\p{N}_ .-]{3,30}$/u.test(username))return msg("اسم المستخدم يجب أن يكون بين 3 و30 حرفًا.");msg("جاري إنشاء الحساب...");try{const {data,error}=await supabaseClient.functions.invoke("create-nour-account",{body:{username,password,age,wilaya}});if(error)throw error;if(!data?.ok)throw new Error(data?.error==="username_taken"?"اسم المستخدم مستعمل من قبل.":data?.details||data?.error||"تعذر إنشاء الحساب.");const {data:loginData,error:loginError}=await supabaseClient.auth.signInWithPassword({email:internalEmail(username),password});if(loginError)throw loginError;await loadProfile(loginData.user.id);const avatar=await uploadAvatar(loginData.user.id,photo,null);const {error:updateError}=await supabaseClient.from("profiles").update({avatar_path:avatar.path,avatar_url:avatar.url}).eq("id",data.user_id);if(updateError)throw updateError;state.profile.avatar_path=avatar.path;state.profile.avatar_url=avatar.url;await showChat()}catch(err){console.error(err);msg(err.message||"تعذر إنشاء الحساب.")}}
-async function login(e){e.preventDefault();msg("جاري تسجيل الدخول...");try{const username=$("#loginUsername").value.trim();if(!username)return msg("اكتب اسم المستخدم.");const {data,error}=await supabaseClient.auth.signInWithPassword({email:internalEmail(username),password:$("#loginPassword").value});if(error)throw error;await loadProfile(data.user.id);await showChat()}catch(err){console.error(err);msg(err.message||"تعذر تسجيل الدخول.")}}
+let loginBusy=false;
+async function login(e){
+ e?.preventDefault();
+ if(loginBusy)return;
+ const btn=$("#loginSubmit");
+ const username=$("#loginUsername")?.value.trim()||"";
+ const password=$("#loginPassword")?.value||"";
+ if(!username){msg("اكتب اسم المستخدم.");$("#loginUsername")?.focus();return}
+ if(!password){msg("اكتب كلمة المرور.");$("#loginPassword")?.focus();return}
+ loginBusy=true;
+ if(btn){btn.disabled=true;btn.textContent="جاري الدخول..."}
+ msg("جاري تسجيل الدخول...");
+ try{
+  const {data,error}=await supabaseClient.auth.signInWithPassword({email:internalEmail(username),password});
+  if(error)throw error;
+  if(!data?.user)throw new Error("تعذر إنشاء جلسة تسجيل الدخول.");
+  await loadProfile(data.user.id);
+  await showChat();
+ }catch(err){
+  console.error("login:",err);
+  const text=String(err?.message||"").toLowerCase();
+  msg(text.includes("invalid login credentials")?"اسم المستخدم أو كلمة المرور غير صحيحة.":(err?.message||"تعذر تسجيل الدخول."));
+ }finally{
+  loginBusy=false;
+  if(btn){btn.disabled=false;btn.textContent="دخول"}
+ }
+}
 function closeModerationModal(){document.querySelector(".moderation-modal")?.remove()}
 function removeProfileActionFromModeration(modal){if(!modal)return;modal.querySelectorAll("option,button,label,div,span").forEach(el=>{const t=(el.textContent||"").trim();if(t.includes("عرض الملف الشخصي")){el.remove()}})}
 function showChatProfile(id){
@@ -407,4 +433,5 @@ function initChatUX(){if(window.chatUX)return;window.chatUX=true;document.queryS
 async function boot(){const {data}=await supabaseClient.auth.getSession();if(data.session){try{await loadProfile(data.session.user.id);await showChat()}catch(err){console.error(err);await supabaseClient.auth.signOut()}}supabaseClient.auth.onAuthStateChange(async(event,session)=>{if(session&&!state.profile){try{await loadProfile(session.user.id);await showChat()}catch(err){console.error(err)}}})}
 $("#registerForm").onsubmit=register;
 $("#loginForm").onsubmit=login;
+$("#loginSubmit")?.addEventListener("click",e=>{e.preventDefault();login(e)});
 boot();
