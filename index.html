@@ -27,6 +27,18 @@
       <input id="dateOfBirth" type="date" required>
       <label class="field-label">الولاية</label>
       <select id="wilaya" required></select>
+      <label class="field-label">الجنس</label>
+      <select id="gender" required>
+        <option value="">اختر الجنس</option>
+        <option value="male">ذكر</option>
+        <option value="female">أنثى</option>
+      </select>
+      <label class="field-label">أبحث عن</label>
+      <select id="seeking" required>
+        <option value="">أبحث عن...</option>
+        <option value="male">رجل</option>
+        <option value="female">امرأة</option>
+      </select>
       <label class="field-label">صورة البروفيل</label>
       <input id="avatar" type="file" accept="image/jpeg,image/png,image/webp">
       <img id="avatarPreview" class="avatar-preview hidden" alt="معاينة الصورة">
@@ -47,6 +59,16 @@
         <input id="pDateOfBirth" type="date" required>
         <label class="field-label">الولاية</label>
         <select id="pWilaya" required></select>
+        <label class="field-label">الجنس</label>
+        <select id="pGender" required>
+          <option value="male">ذكر</option>
+          <option value="female">أنثى</option>
+        </select>
+        <label class="field-label">أبحث عن</label>
+        <select id="pSeeking" required>
+          <option value="male">رجل</option>
+          <option value="female">امرأة</option>
+        </select>
         <label class="field-label">تغيير صورة البروفيل</label>
         <input id="pAvatar" type="file" accept="image/jpeg,image/png,image/webp">
         <button class="primary">حفظ الملف</button>
