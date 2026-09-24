@@ -1037,7 +1037,12 @@ function closeChat(){document.getElementById('chat-window').classList.remove('op
 
 /* ===================== RENDER MESSAGES ===================== */
 function renderChatMsgs(){
-  const c=document.getElementById('chat-msgs');c.innerHTML='';
+  const c=document.getElementById('chat-msgs');
+  const oldScrollTop=c.scrollTop;
+  const oldScrollHeight=c.scrollHeight;
+  const oldClientHeight=c.clientHeight;
+  const wasNearBottom=(oldScrollHeight-oldScrollTop-oldClientHeight)<100;
+  c.innerHTML='';
   const key=getCK(currentUser.id,currentChatUser.id);
   const msgs=DB.messages[key]||[];
   let lastDate='';
