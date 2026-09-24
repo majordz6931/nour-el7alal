@@ -49,5 +49,39 @@
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2'"></script>
 <script src="app.js?v=20260924-loginfix2"></script>
+<script>
+(function(){
+  function initLoginFallback(){
+    const form=document.getElementById("loginForm");
+    const user=document.getElementById("loginUsername");
+    const pass=document.getElementById("loginPassword");
+    const msg=document.getElementById("authMsg");
+    if(!form||!user||!pass)return;
+    form.onsubmit=async function(e){
+      e.preventDefault();
+      const username=user.value.trim();
+      const password=pass.value;
+      if(!username){if(msg)msg.textContent="اكتب اسم المستخدم.";return}
+      if(!password){if(msg)msg.textContent="اكتب كلمة المرور.";return}
+      if(msg)msg.textContent="جاري تسجيل الدخول...";
+      try{
+        if(!window.supabase?.createClient)throw new Error("تعذر تحميل خدمة تسجيل الدخول. أعد تحميل الصفحة.");
+        const bytes=new TextEncoder().encode(username.toLowerCase());
+        const email=Array.from(bytes).map(function(b){return b.toString(16).padStart(2,"0")}).join("")+"@nour-el7alal.com";
+        const client=window.supabase.createClient("https://fiqqkexapeivhvoigomv.supabase.co","sb_publishable__K-3VfJgl21taaQVfgiXNA_o0AdTHU7");
+        const result=await client.auth.signInWithPassword({email:email,password:password});
+        if(result.error)throw result.error;
+        if(typeof window.loadProfile==="function")await window.loadProfile(result.data.user.id);
+        if(typeof window.showChat==="function")await window.showChat();
+      }catch(err){
+        console.error("login:",err);
+        if(msg)msg.textContent=err?.message||"تعذر تسجيل الدخول.";
+      }
+    };
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initLoginFallback);
+  else initLoginFallback();
+})();
+</script>
 </body>
 </html>
