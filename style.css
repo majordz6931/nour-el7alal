@@ -426,3 +426,8 @@
 
 .profile-like-count{display:inline-flex;align-items:center;justify-content:center;margin:4px auto 16px;padding:7px 13px;border-radius:999px;background:#1c3038;border:1px solid #36515b;color:#f1d9dc;font-weight:800;font-size:13px}
 .like-count-mini{font-weight:700!important}
+
+/* إصلاح نهائي: زر ملف العضو يبقى ظاهرًا داخل رأس المحادثة */
+#roomProfile.room-profile-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;width:auto!important;min-width:88px!important;height:42px!important;padding:8px 12px!important;border:1px solid #4ac58c!important;border-radius:10px!important;background:#173b31!important;color:#8df0ba!important;font-weight:800!important;cursor:pointer!important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:5!important}
+#roomProfile.room-profile-btn:hover{background:#1d4b3e!important}
+@media(max-width:700px){#roomProfile.room-profile-btn{min-width:82px!important;height:40px!important;padding:7px 9px!important;font-size:13px!important}}
