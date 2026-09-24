@@ -931,7 +931,7 @@ function toggleHeart(ev,uid){
 
 /* ===================== MODAL ===================== */
 function openModal(u){
-  modalUser=u;if(u.views!==undefined&&u.id!==currentUser?.id)u.views++;
+  modalUser=u;
   const isAdmin=u.role==='admin';
   const av=document.getElementById('m-av');
   av.className=`modal-av${isAdmin?' admin-modal-av':''}`;
