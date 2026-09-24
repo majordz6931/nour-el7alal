@@ -125,3 +125,7 @@
 .send .attach,.send .voice-btn{flex:0 0 42px!important;width:42px!important;min-width:42px!important;height:42px!important;padding:0!important;display:grid!important;place-items:center!important;font-size:22px!important}
 .send .send-btn{flex:0 0 auto!important;width:auto!important;min-width:72px!important;height:42px!important;padding:0 12px!important;white-space:nowrap!important}
 @media(max-width:700px){.send{gap:5px!important;padding:7px 6px!important}.send .attach,.send .voice-btn{flex-basis:40px!important;width:40px!important;min-width:40px!important}.send .send-btn{min-width:62px!important;padding:0 8px!important;font-size:13px!important}.send input{min-width:80px!important}}
+
+/* Keep the image file input invisible; style only the chat text field */
+.send #chatImageInput{display:none!important;position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+.send #message{display:block!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;height:44px!important;box-sizing:border-box!important;padding:0 13px!important;direction:rtl!important;text-align:right!important}
