@@ -172,16 +172,26 @@ $('messageForm').onsubmit=async event=>{
 
 async function usernameAuth(action,body){
   try{
-    const response=await fetch(AUTH_FUNCTION,{
+    const {data,error}=await supabase.functions.invoke('username-auth',{
       method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
-      body:JSON.stringify({action,...body})
+      body:{action,...body}
     });
-    const data=await response.json().catch(()=>({error:'استجابة غير صالحة'}));
-    if(!response.ok)return {error:data.error||'تعذر تنفيذ الطلب'};
+    if(error){
+      console.error('username-auth error:',error);
+      let message='';
+      if(error.context){
+        try{
+          const payload=await error.context.json();
+          message=payload?.error||payload?.message||'';
+        }catch(_){}
+      }
+      return {error:message||error.message||'تعذر تسجيل الدخول'};
+    }
+    if(!data)return {error:'لم تصل استجابة من خدمة تسجيل الدخول'};
     return data;
   }catch(error){
-    return {error:'تعذر الاتصال بخدمة تسجيل الدخول'};
+    console.error('username-auth exception:',error);
+    return {error:error?.message||'تعذر الاتصال بخدمة تسجيل الدخول'};
   }
 }
 
