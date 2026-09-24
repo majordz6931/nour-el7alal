@@ -19,13 +19,6 @@ async function stopPresence(){if(state.presenceTimer){clearInterval(state.presen
 async function loadProfile(userId){const {data,error}=await supabaseClient.from("profiles").select("*").eq("id",userId).single();if(error)throw error;if(data?.avatar_path&&!data.avatar_url){const {data:pub}=supabaseClient.storage.from("avatars").getPublicUrl(data.avatar_path);data.avatar_url=pub?.publicUrl||null}state.profile=data;state.user={id:userId,...data}}
 async function showChat(){
  if(!state.profile)return;
- const isAdmin=await initAdminAccess();
- if(isAdmin){
-  const w=window.open("admin.html","nour-el7alal-admin");
-  if(!w){window.location.href="admin.html";return}
-  try{w.focus()}catch(e){}
-  return
- }
  $("#authView").hidden=true;$("#chatView").hidden=false;$("#siteBanner").hidden=true;
  startNotifications();
  $("#me").textContent="@"+state.profile.username+" · "+(state.profile.wilaya||"");
@@ -35,6 +28,7 @@ async function showChat(){
  if(backMembers)backMembers.onclick=()=>{state.selectedUser=null;$("#message").value="";$("#message").disabled=true;$(".send-btn").disabled=true;const roomHead=document.querySelector(".room-head");if(roomHead)roomHead.hidden=true;const messages=$("#messages");if(messages)messages.innerHTML="";renderUsers();document.querySelector(".chat-sidebar")?.classList.remove("mobile-hidden");document.querySelector(".room")?.classList.remove("mobile-active")};
  const roomHead=document.querySelector(".room-head");if(roomHead)roomHead.hidden=true;
  await loadProfiles();await startPresence();initChatUX();
+ await initAdminAccess();
  if(!state.selectedUser&&state.profiles.length)await selectUser(state.profiles[0].id)
 }
 async function loadProfiles(){const [{data,error},{data:blocks,error:blockError}]=await Promise.all([supabaseClient.from("profiles").select("id,username,full_name,wilaya,age,avatar_url,avatar_path,is_online,last_seen").order("updated_at",{ascending:false}),supabaseClient.from("profile_blocks").select("user_id,blocked_id").or("user_id.eq."+state.user.id+",blocked_id.eq."+state.user.id)]);if(error){console.error(error);return}if(blockError)console.error("blocks:",blockError);state.blockedIds=new Set((blocks||[]).flatMap(b=>[b.user_id===state.user.id?b.blocked_id:b.user_id]));state.profiles=(data||[]).filter(p=>p.id!==state.user.id&&!state.blockedIds.has(p.id)&&p.is_online===true&&p.last_seen&&Date.now()-new Date(p.last_seen).getTime()<=10000).map(p=>{if(p.avatar_path&&!p.avatar_url){const {data:pub}=supabaseClient.storage.from("avatars").getPublicUrl(p.avatar_path);p.avatar_url=pub?.publicUrl||null}return p});if(state.selectedUser&&state.blockedIds.has(state.selectedUser.id)){state.selectedUser=null;$("#message").disabled=true;$(".send-btn").disabled=true;const h=document.querySelector(".room-head");if(h)h.hidden=true}renderUsers()}
