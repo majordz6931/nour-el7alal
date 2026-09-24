@@ -129,3 +129,7 @@
 /* Keep the image file input invisible; style only the chat text field */
 .send #chatImageInput{display:none!important;position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
 .send #message{display:block!important;flex:1 1 auto!important;width:auto!important;min-width:0!important;height:44px!important;box-sizing:border-box!important;padding:0 13px!important;direction:rtl!important;text-align:right!important}
+
+/* Compact chat viewport: show recent messages, scroll older ones */
+.room .messages{height:360px!important;min-height:0!important;max-height:360px!important;overflow-y:auto!important;overflow-x:hidden!important;flex:0 0 360px!important;padding:12px 10px!important;box-sizing:border-box!important;scroll-behavior:smooth!important}
+@media(max-width:700px){.room .messages{height:300px!important;max-height:300px!important;flex-basis:300px!important;padding:10px 7px!important}.bubble{max-width:88%!important}}
