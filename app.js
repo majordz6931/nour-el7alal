@@ -139,6 +139,7 @@ $('search').oninput=()=>loadUsers($('search').value.trim());
 $('blockBtn').onclick=toggleBlock;\n$('reportBtn').onclick=reportSelected;\n\n$('messageForm').onsubmit=async e=>{
   e.preventDefault();
   if(!selectedUser)return;
+  if(selectedBlocked){ $('messages').innerHTML='<p class="muted">تم حظر هذا المستخدم. ألغِ الحظر أولاً لإرسال رسالة.</p>'; return; }
   const content=$('messageInput').value.trim();
   if(!content)return;
   const {error}=await supabase.from('messages').insert({sender_id:currentUser.id,receiver_id:selectedUser.id,content});
