@@ -133,3 +133,14 @@
 /* Compact chat viewport: show recent messages, scroll older ones */
 .room .messages{height:360px!important;min-height:0!important;max-height:360px!important;overflow-y:auto!important;overflow-x:hidden!important;flex:0 0 360px!important;padding:12px 10px!important;box-sizing:border-box!important;scroll-behavior:smooth!important}
 @media(max-width:700px){.room .messages{height:300px!important;max-height:300px!important;flex-basis:300px!important;padding:10px 7px!important}.bubble{max-width:88%!important}}
+
+/* Phone-sized chat layout: fill visible screen and keep composer visible */
+@media(max-width:700px){
+ .chat-app{height:calc(100dvh - 170px)!important;min-height:0!important;max-height:calc(100dvh - 170px)!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+ .room.mobile-active{display:flex!important;flex:1 1 auto!important;min-height:0!important;height:100%!important;max-height:100%!important;flex-direction:column!important;overflow:hidden!important}
+ .room-head{flex:0 0 auto!important}
+ .room .messages{height:auto!important;min-height:0!important;max-height:none!important;flex:1 1 auto!important;overflow-y:auto!important;overflow-x:hidden!important;padding:10px 7px!important}
+ .room .send{flex:0 0 auto!important}
+ .room .quick-replies{flex:0 0 auto!important;min-height:0!important}
+ .room .safety-bar{flex:0 0 auto!important}
+}
