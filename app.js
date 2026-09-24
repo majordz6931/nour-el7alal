@@ -102,13 +102,19 @@ function startNotifications(){
 async function register(e){e.preventDefault();const username=$("#username").value.trim(),password=$("#password").value,age=Number($("#age").value),wilaya=$("#wilaya").value,photo=photoInput?.files?.[0];if(!photo)return msg("لازم تختار صورة بروفايل.");if(password!==$("#confirmPassword").value)return msg("كلمتا المرور غير متطابقتين.");if(age<18)return msg("الموقع مخصص لمن أعمارهم 18 سنة أو أكثر.");if(!wilaya)return msg("اختر الولاية.");if(!/^[\p{L}\p{N}_ .-]{3,30}$/u.test(username))return msg("اسم المستخدم يجب أن يكون بين 3 و30 حرفًا.");msg("جاري إنشاء الحساب...");try{const {data,error}=await supabaseClient.functions.invoke("create-nour-account",{body:{username,password,age,wilaya}});if(error)throw error;if(!data?.ok)throw new Error(data?.error==="username_taken"?"اسم المستخدم مستعمل من قبل.":data?.details||data?.error||"تعذر إنشاء الحساب.");const {data:loginData,error:loginError}=await supabaseClient.auth.signInWithPassword({email:internalEmail(username),password});if(loginError)throw loginError;await loadProfile(loginData.user.id);const avatar=await uploadAvatar(loginData.user.id,photo,null);const {error:updateError}=await supabaseClient.from("profiles").update({avatar_path:avatar.path,avatar_url:avatar.url}).eq("id",data.user_id);if(updateError)throw updateError;state.profile.avatar_path=avatar.path;state.profile.avatar_url=avatar.url;await showChat()}catch(err){console.error(err);msg(err.message||"تعذر إنشاء الحساب.")}}
 async function login(e){e.preventDefault();msg("جاري تسجيل الدخول...");try{const username=$("#loginUsername").value.trim();if(!username)return msg("اكتب اسم المستخدم.");const {data,error}=await supabaseClient.auth.signInWithPassword({email:internalEmail(username),password:$("#loginPassword").value});if(error)throw error;await loadProfile(data.user.id);await showChat()}catch(err){console.error(err);msg(err.message||"تعذر تسجيل الدخول.")}}
 function closeModerationModal(){document.querySelector(".moderation-modal")?.remove()}
+function showChatProfile(id){
+  const p=state.profiles.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  closeCommunityPanel();
+  showProfile(id);
+}
 function showModerationChoice(id,name){
   return new Promise(resolve=>{
     closeModerationModal();
     const blocked=state.blockedIds.has(id);
     const modal=document.createElement("div");
     modal.className="moderation-modal";
-    modal.innerHTML='<div class="moderation-card" role="dialog" aria-modal="true"><div class="moderation-head"><strong>إدارة العضو</strong><button type="button" class="moderation-close">×</button></div><p class="moderation-name">'+escapeHtml(name||"العضو")+'</p><select class="moderation-select" id="moderationAction"><option value="">اختر الإجراء...</option><option value="block">'+(blocked?"🔓 فك الحظر":"🚫 حظر العضو")+'</option><option value="report">⚠️ إبلاغ عن العضو</option></select><div class="moderation-footer"><button type="button" class="moderation-cancel">إلغاء</button><button type="button" class="moderation-confirm">متابعة</button></div></div>';
+    modal.innerHTML='<div class="moderation-card" role="dialog" aria-modal="true"><div class="moderation-head"><strong>إدارة العضو</strong><button type="button" class="moderation-close">×</button></div><p class="moderation-name">'+escapeHtml(name||"العضو")+'</p><select class="moderation-select" id="moderationAction"><option value="">اختر الإجراء...</option><option value="profile">👤 عرض الملف الشخصي</option><option value="block">'+(blocked?"🔓 فك الحظر":"🚫 حظر العضو")+'</option><option value="report">⚠️ إبلاغ عن العضو</option></select><div class="moderation-footer"><button type="button" class="moderation-cancel">إلغاء</button><button type="button" class="moderation-confirm">متابعة</button></div></div>';
     document.body.appendChild(modal);
     const finish=a=>{closeModerationModal();resolve(a)};
     modal.querySelector(".moderation-close").onclick=()=>finish(null);
@@ -164,7 +170,8 @@ async function reportUser(id,name){
 }
 async function showModerationMenu(id,name){
   const choice=await showModerationChoice(id,name);
-  if(choice==="block"){if(state.blockedIds.has(id))await unblockUserDirect(id);else await blockUserDirect(id)}
+  if(choice==="profile"){showChatProfile(id);return}
+    if(choice==="block"){if(state.blockedIds.has(id))await unblockUserDirect(id);else await blockUserDirect(id)}
   else if(choice==="report")await reportUserDirect(id,name);
 }
 async function blockUserDirect(id){
