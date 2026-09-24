@@ -856,7 +856,7 @@ function renderStories(){
   STORIES.forEach(s=>{
     const u=DB.users.find(x=>x.id===s.uid);if(!u||u.banned)return;
     const item=document.createElement('div');item.className='story-item';
-    const avContent=u.photo&&u.photo.startsWith('data:')?`<img src="${u.photo}" alt=""/>`:`<span style="font-size:1.4rem">${u.gender==='أنثى'?'👩':'👨'}</span>`;
+    const avContent=u.photo?`<img src="${u.photo}" alt=""/>`:`<span style="font-size:1.4rem">${u.gender==='أنثى'?'👩':'👨'}</span>`;
     item.innerHTML=`<div class="story-ring"><div class="story-inner">${avContent}</div></div><div class="story-name">${u.username}</div>`;
     item.onclick=()=>openStory(s,u);
     wrap.appendChild(item);
@@ -869,7 +869,7 @@ function openStory(s,u){
   document.getElementById('sv-body').style.background=s.bg;
   document.getElementById('sv-caption').textContent=s.caption;
   const avEl=document.getElementById('sv-av');
-  avEl.innerHTML=u.photo&&u.photo.startsWith('data:')?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:u.gender==='أنثى'?'👩':'👨';
+  avEl.innerHTML=u.photo?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:u.gender==='أنثى'?'👩':'👨';
   const prog=document.getElementById('sv-progress');prog.innerHTML='<div class="sv-bar"><div class="sv-bar-fill" id="sv-fill"></div></div>';
   sv.classList.add('open');
   let w=0;const iv=setInterval(()=>{w+=2;document.getElementById('sv-fill').style.width=w+'%';if(w>=100){clearInterval(iv);sv.classList.remove('open');}},100);
@@ -880,7 +880,7 @@ function closeStory(){const sv=document.getElementById('story-viewer');clearInte
 /* ===================== DISCOVER ===================== */
 function filterD(el,type){document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');dFilter=type;renderProfiles();}
 function getAvEl(u,circle=false){
-  if(u.photo&&u.photo.startsWith('data:'))return`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;${circle?'border-radius:50%;':''}" alt=""/>`;
+  if(u.photo)return`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;${circle?'border-radius:50%;':''}" alt=""/>`;
   return u.id==='admin'?'👑':(u.gender==='أنثى'?'👩':'👨');
 }
 function renderProfiles(){
@@ -935,7 +935,7 @@ function openModal(u){
   const isAdmin=u.role==='admin';
   const av=document.getElementById('m-av');
   av.className=`modal-av${isAdmin?' admin-modal-av':''}`;
-  if(u.photo&&u.photo.startsWith('data:'))av.innerHTML=`<img src="${u.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+  if(u.photo)av.innerHTML=`<img src="${u.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
   else av.textContent=isAdmin?'👑':(u.gender==='أنثى'?'👩':'👨');
   document.getElementById('m-name').innerHTML=isAdmin?`<span class="admin-name">👑 ADMIN</span>`:u.username;
   document.getElementById('m-sub').textContent=isAdmin?'مدير الموقع — متصل 24/7 🛡️':`${calcAge(u.dob)} سنة • ${u.wilaya} • ${u.gender}`;
@@ -959,7 +959,7 @@ function openModal(u){
   document.getElementById('profile-modal').classList.add('open');
 }
 function closeModalOut(ev){if(ev.target===document.getElementById('profile-modal'))document.getElementById('profile-modal').classList.remove('open');}
-function heartFromModal(){if(!modalUser||modalUser.role==='admin')return;if(!DB.likes[currentUser.id])DB.likes[currentUser.id]=new Set();DB.likes[currentUser.id].add(modalUser.id);modalUser.hearts=(modalUser.hearts||0)+1;showToast(`❤️ أرسلت قلباً لـ ${modalUser.username}`);document.getElementById('profile-modal').classList.remove('open');renderProfiles();updateStats();}
+async function heartFromModal(){if(!modalUser||modalUser.role==='admin')return;await toggleHeartReal({stopPropagation(){}},modalUser.id);document.getElementById('profile-modal').classList.remove('open');}
 function msgFromModal(){if(!modalUser)return;document.getElementById('profile-modal').classList.remove('open');setTimeout(()=>openChat(modalUser),280);}
 function reportFromModal(){if(!modalUser||modalUser.role==='admin')return;reportTarget=modalUser;document.getElementById('profile-modal').classList.remove('open');setTimeout(()=>document.getElementById('report-modal').classList.add('open'),280);}
 
@@ -991,7 +991,7 @@ function renderConvList(query=''){
     const unread=msgs.filter(m=>m.from===u.id&&!m.read).length;
     totalUnread+=unread;
     const div=document.createElement('div');div.className=`conv-item${isAdmin?' admin-conv':''}`;
-    const avContent=u.photo&&u.photo.startsWith('data:')?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:(isAdmin?'👑':(u.gender==='أنثى'?'👩':'👨'));
+    const avContent=u.photo?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:(isAdmin?'👑':(u.gender==='أنثى'?'👩':'👨'));
     div.innerHTML=`
       <div class="conv-av">
         <div class="conv-av-img${isAdmin?' admin-av':''}">${avContent}</div>
@@ -1019,7 +1019,7 @@ function openChat(u){
   hdr.className='chat-hdr'+(isAdmin?' admin-hdr':'');
   const avEl=document.getElementById('cw-av');
   avEl.className='chat-hdr-av'+(isAdmin?' admin-av-hdr':'');
-  if(u.photo&&u.photo.startsWith('data:'))avEl.innerHTML=`<img src="${u.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+  if(u.photo)avEl.innerHTML=`<img src="${u.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
   else avEl.textContent=isAdmin?'👑':(u.gender==='أنثى'?'👩':'👨');
   document.getElementById('cw-name').innerHTML=isAdmin?`<span class="admin-name">👑 ADMIN</span>`:u.username;
   document.getElementById('cw-status').innerHTML=isAdmin?`<span style="color:var(--admin-color)">🛡️ مدير الموقع • متصل 24/7</span>`:(u.online?'<span style="color:var(--green2)">🟢 متصل الآن</span>':'<span style="color:var(--muted)">⚫ غير متصل</span>');
@@ -1180,12 +1180,12 @@ function playVoice(url,btn){const audio=new Audio(url);btn.textContent='⏸️';
 function updateProfilePage(){
   if(!currentUser)return;
   const av=document.getElementById('my-av-d');
-  if(currentUser.photo&&currentUser.photo.startsWith('data:')){av.style.fontSize='0';av.innerHTML=`<img src="${currentUser.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;}
+  if(currentUser.photo){av.style.fontSize='0';av.innerHTML=`<img src="${currentUser.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;}
   else{av.innerHTML='';av.style.fontSize='2.4rem';av.textContent=currentUser.gender==='أنثى'?'👩':'👨';}
   document.getElementById('my-name-d').textContent=currentUser.username;
   document.getElementById('my-info-d').textContent=`${calcAge(currentUser.dob)} سنة • ${currentUser.wilaya} • ${currentUser.gender}`;
   document.getElementById('edit-bio').value=currentUser.bio||'';
-  if(currentUser.photo&&currentUser.photo.startsWith('data:')){document.getElementById('edit-photo-prev').src=currentUser.photo;document.getElementById('edit-photo-prev').classList.remove('hidden');document.getElementById('edit-photo-ph').classList.add('hidden');}
+  if(currentUser.photo){document.getElementById('edit-photo-prev').src=currentUser.photo;document.getElementById('edit-photo-prev').classList.remove('hidden');document.getElementById('edit-photo-ph').classList.add('hidden');}
   updateStats();
 }
 function updateStats(){
@@ -1222,7 +1222,7 @@ function renderAdminUsers(query=''){
     const d=document.createElement('div');d.className='uac';
     d.innerHTML=`
       <div class="uac-hdr">
-        <div class="uac-av">${u.photo&&u.photo.startsWith('data:')?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:u.gender==='أنثى'?'👩':'👨'}</div>
+        <div class="uac-av">${u.photo?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:u.gender==='أنثى'?'👩':'👨'}</div>
         <div class="uac-info">
           <div class="uac-name">${u.username}${u.banned?'<span class="badge badge-red">محظور</span>':''}</div>
           <div class="uac-sub">${calcAge(u.dob)} سنة • ${u.wilaya} • ${u.gender} • ${u.online?'🟢 متصل':'⚫ غير متصل'}</div>
@@ -1293,7 +1293,7 @@ function renderAdminChat(){
     const d=document.createElement('div');d.className='admin-user-row';
     d.innerHTML=`
       <div class="uac-av" style="border-color:${u.online?'var(--green2)':'var(--muted)'}">
-        ${u.photo&&u.photo.startsWith('data:')?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:(u.gender==='أنثى'?'👩':'👨')}
+        ${u.photo?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:(u.gender==='أنثى'?'👩':'👨')}
       </div>
       <div style="flex:1">
         <div style="font-weight:700;font-size:.88rem">${u.username}</div>
