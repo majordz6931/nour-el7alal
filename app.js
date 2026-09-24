@@ -1,4 +1,10 @@
-const { createClient } = window.supabase;
+const supabaseLib=window.supabase;
+if(!supabaseLib?.createClient){
+  const bootMsg=document.getElementById('authMsg');
+  if(bootMsg)bootMsg.textContent='تعذر تحميل خدمة التطبيق. أعد تحميل الصفحة.';
+  throw new Error('Supabase client CDN failed to load');
+}
+const { createClient } = supabaseLib;
 
 const SUPABASE_URL='https://fnkvlmrzzxptncrqpyyz.supabase.co';
 const SUPABASE_KEY='sb_publishable_hwffg3R4YzXTMnDu8-ZMDQ_1NuLnAfY';
