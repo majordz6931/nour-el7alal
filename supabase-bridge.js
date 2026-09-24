@@ -412,6 +412,27 @@
     return legacyOpenModal(u);
   };
 
+  const legacyOpenStory=window.openStory;
+  window.openStory=function(s,u){
+    if(!s?.media_url) return legacyOpenStory(s,u);
+    const sv=document.getElementById("story-viewer");
+    document.getElementById("sv-name").textContent=u?.username||"";
+    document.getElementById("sv-time").textContent=s.created_at?new Date(s.created_at).toLocaleTimeString("ar-DZ",{hour:"2-digit",minute:"2-digit"}):"";
+    const avEl=document.getElementById("sv-av");
+    avEl.innerHTML=u?.photo?'<img src="'+u.photo+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">':(u?.gender==="أنثى"?"👩":"👨");
+    const body=document.getElementById("sv-body");
+    const url=sb.storage.from("stories").getPublicUrl(s.media_url).data.publicUrl;
+    body.innerHTML=s.media_url.match(/\.(mp4|webm|mov|m4v)$/i)
+      ? '<video src="'+url+'" controls autoplay playsinline style="width:100%;max-height:520px;object-fit:contain"></video>'
+      : '<img src="'+url+'" alt="" style="width:100%;max-height:520px;object-fit:contain">';
+    body.style.background="#000";
+    document.getElementById("sv-caption").textContent=s.caption||"";
+    const prog=document.getElementById("sv-progress");prog.innerHTML='<div class="sv-bar"><div class="sv-bar-fill" id="sv-fill"></div></div>';
+    sv.classList.add("open");
+    clearInterval(sv._iv);
+    let w=0;sv._iv=setInterval(()=>{w+=2;const fill=document.getElementById("sv-fill");if(fill)fill.style.width=w+"%";if(w>=100){clearInterval(sv._iv);sv.classList.remove("open");}},100);
+  };
+
   let realtimeChannel=null;
   async function setupRealtime(){
     if(realtimeChannel){
