@@ -363,6 +363,21 @@
   window.sendAnnounce=sendAnnounceReal; window.renderAdminReports=renderAdminReportsReal; window.resolveReport=resolveReportReal;
   window.renderAdminCreds=renderAdminCredsSafe;
 
+  // Count profile visits in Supabase whenever a member opens another member's profile.
+  const legacyOpenModal=window.openModal;
+  window.openModal=async function(u){
+    if(u && currentUser?.id && u.id!==currentUser.id && u.role!=="admin"){
+      try{
+        const {data,error}=await sb.rpc("increment_profile_view",{target_user_id:u.id});
+        if(error) throw error;
+        if(Number.isFinite(Number(data))) u.views=Number(data);
+      }catch(e){
+        console.error("Profile view:",e);
+      }
+    }
+    return legacyOpenModal(u);
+  };
+
   let realtimeChannel=null;
   async function setupRealtime(){
     if(realtimeChannel){
