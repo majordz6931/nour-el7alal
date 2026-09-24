@@ -405,3 +405,20 @@
   #users{height:calc(100% - 126px)!important;max-height:none!important}
   .messages{min-width:0!important}
 }
+
+
+/* Profile likes / mutual interest */
+.likes-summary{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.likes-summary span{background:#13262f;border:1px solid #2b414b;border-radius:999px;padding:8px 12px;color:#dcebed;font-size:13px;font-weight:700}
+.likes-section{margin:0 0 22px}
+.likes-section h4{margin:0 0 10px;color:#e8f3f5;font-size:16px}
+.like-person-card{position:relative}
+.profile-like-action{min-width:110px}
+.request-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #293d46}
+.community-nav button.has-notification{position:relative}
+.community-nav button.has-notification::after{content:"";position:absolute;top:5px;left:8px;width:8px;height:8px;border-radius:50%;background:#4ac58c;box-shadow:0 0 0 3px rgba(74,197,140,.12)}
+@media(max-width:700px){
+ .likes-summary{gap:6px}
+ .likes-summary span{font-size:12px;padding:7px 9px}
+ .request-tabs{gap:6px}
+}
