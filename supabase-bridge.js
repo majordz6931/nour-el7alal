@@ -113,11 +113,9 @@ function usernameEmail(username){return "u_"+Array.from(new TextEncoder().encode
     ev.preventDefault();
     try{
       const u=document.getElementById("l-user").value.trim(), p=document.getElementById("l-pass").value;
-      const email=usernameEmail(u);
-      const {data,error}=await sb.auth.signInWithPassword({email,password:p});
-      if(error||!data.user) throw error||new Error("اسم المستخدم أو كلمة المرور غير صحيحة");
-      const {data:pr,error:pe}=await sb.from("profiles").select("*").eq("id",data.user.id).single();
-      if(pe) throw pe;
+      const data=await usernameAuth("login",{username:u,password:p});
+      const {data:pr,error}=await sb.from("profiles").select("*").eq("id",data.user.id).single();
+      if(error) throw error;
       if(pr.banned){await sb.auth.signOut();showToast("🚫 حسابك محظور — تواصل مع الإدارة");return;}
       currentUser=mapProfile(pr);
       currentUser.role=data.user?.app_metadata?.role==="admin" ? "admin" : currentUser.role;
@@ -128,36 +126,20 @@ function usernameEmail(username){return "u_"+Array.from(new TextEncoder().encode
   async function doRegisterReal(ev){
     ev.preventDefault();
     try{
-      const u=document.getElementById("r-user").value.trim().toLowerCase(), p=document.getElementById("r-pass").value;
+      const u=document.getElementById("r-user").value.trim(), p=document.getElementById("r-pass").value;
       const rawGender=document.getElementById("r-gender").value; const g=rawGender==="ذكر"||rawGender==="male"?"male":"female";
       const d=document.getElementById("r-dob").value, w=document.getElementById("r-wilaya").value, b=document.getElementById("r-bio").value.trim();
       const file=document.getElementById("photo-inp")?.files?.[0]||null;
-      if(!u||u.length<3||u.length>24){showToast("⚠️ اسم المستخدم يجب أن يكون بين 3 و24 حرفًا");return;}
-      if(!/^[\p{L}\p{N}_.-]+$/u.test(u)){showToast("⚠️ اسم المستخدم غير صالح");return;}
-      if(p.length<6){showToast("⚠️ كلمة المرور يجب أن تكون 6 أحرف على الأقل");return;}
       if(!w){showToast("⚠️ اختر الولاية");return;}
       if(calcAge(d)<18){showToast("⚠️ يجب أن يكون عمرك 18 سنة على الأقل");return;}
-      const {data:existing}=await sb.from("profiles").select("id").eq("username",u).maybeSingle();
-      if(existing){showToast("⚠️ اسم المستخدم مستعمل بالفعل");return;}
-      const email=usernameEmail(u);
-      const {data:authData,error:authError}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
-      if(authError) throw authError;
-      if(!authData.user) throw new Error("تعذر إنشاء الحساب");
-      let user=authData.user;
-      if(!authData.session){
-        const {data:ld,error:le}=await sb.auth.signInWithPassword({email,password:p});
-        if(le||!ld.user) throw le||new Error("تعذر فتح جلسة الحساب");
-        user=ld.user;
-      }
-      const {error:profileError}=await sb.from("profiles").insert({id:user.id,username:u,date_of_birth:d,wilaya:w,gender:g,seeking:g==="male"?"female":"male",bio:b||"لا توجد نبذة"});
-      if(profileError){await sb.auth.signOut();throw profileError;}
-      currentUser=mapProfile({id:user.id,username:u,date_of_birth:d,wilaya:w,gender:g,bio:b,created_at:new Date().toISOString()});
+      const data=await usernameAuth("signup",{username:u,password:p,date_of_birth:d,wilaya:w,gender:g,seeking:g==="male"?"female":"male"});
+      currentUser=mapProfile({id:data.user.id,username:u,date_of_birth:d,wilaya:w,gender:g,bio:b,created_at:new Date().toISOString()});
       if(file){
         const path=await uploadFile("avatars",currentUser.id,file,"avatar");
         const {data:pub}=sb.storage.from("avatars").getPublicUrl(path);
         await sb.from("profiles").update({avatar_url:pub.publicUrl,bio:b||"لا توجد نبذة"}).eq("id",currentUser.id);
         currentUser.photo=pub.publicUrl; currentUser.bio=b||"لا توجد نبذة";
-      }
+      }else if(b){await sb.from("profiles").update({bio:b}).eq("id",currentUser.id);}
       openApp();
       Promise.allSettled([loadData(),setPresence(true),setupRealtime()]).then(()=>{renderProfiles();renderConvList();updateProfilePage();renderStoriesReal();updateOnlineCount();});
     }catch(e){showToast("❌ "+safeErr(e));}
