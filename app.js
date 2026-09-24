@@ -218,15 +218,61 @@ async function loadUsers(q=''){
       </div>
     </div>`).join('')||'<p class="muted">لا توجد نتائج.</p>';
 
-  document.querySelectorAll('.user').forEach(el=>el.onclick=()=>{
+  document.querySelectorAll('.user').forEach(el=>el.onclick=async()=>{
     selectedUser=(data||[]).find(u=>u.id===el.dataset.id);
     if(!selectedUser)return;
     $('chatTitle').textContent='محادثة مع '+selectedUser.username;
-    loadMessages();
+    $('safetyActions').classList.remove('hidden');
+    await refreshSafetyActions();
+    await loadMessages();
   });
 }
 
-async function refreshSafetyActions(){\n  if(!selectedUser)return;\n  const {data,error}=await supabase.from('blocks').select('blocked_id').eq('blocked_id',selectedUser.id).maybeSingle();\n  selectedBlocked=!error&&!!data;\n  $('blockBtn').textContent=selectedBlocked?'🔓 إلغاء الحظر':'🚫 حظر';\n  $('messageInput').disabled=selectedBlocked;\n  $('messageInput').placeholder=selectedBlocked?'الحظر مفعّل — ألغِ الحظر للرسائل':'اكتب رسالة...';\n}\n\nasync function toggleBlock(){\n  if(!selectedUser)return;\n  if(selectedBlocked){\n    const {error}=await supabase.from('blocks').delete().eq('blocker_id',currentUser.id).eq('blocked_id',selectedUser.id);\n    if(error){alert(error.message);return;}\n    selectedBlocked=false;\n  }else{\n    const {error}=await supabase.from('blocks').insert({blocker_id:currentUser.id,blocked_id:selectedUser.id});\n    if(error){alert(error.message);return;}\n    selectedBlocked=true;\n  }\n  await refreshSafetyActions();\n  await loadUsers($('search').value.trim());\n  if(selectedBlocked){$('messages').innerHTML='<p class="muted">تم حظر هذا المستخدم. لن تتمكن من مراسلته.</p>';}else{await loadMessages();}\n}\n\nasync function reportSelected(){\n  if(!selectedUser)return;\n  const reason=prompt('سبب التبليغ؟\\n\\n1 - حساب مزيف\\n2 - إساءة أو تحرش\\n3 - طلب مال أو احتيال\\n4 - محتوى غير مناسب\\n5 - سبب آخر');\n  if(!reason)return;\n  const details=prompt('تفاصيل إضافية (اختياري):')||null;\n  const {error}=await supabase.from('reports').insert({reporter_id:currentUser.id,reported_id:selectedUser.id,reason:reason.slice(0,500),details:details?details.slice(0,2000):null});\n  if(error){alert(error.message);return;}\n  alert('تم إرسال التبليغ للإدارة. شكرًا لمساعدتك في الحفاظ على أمان الموقع.');\n}\n\nasync function loadMessages(){
+async function refreshSafetyActions(){
+  if(!selectedUser)return;
+  const {data,error}=await supabase.from('blocks').select('blocked_id').eq('blocked_id',selectedUser.id).maybeSingle();
+  selectedBlocked=!error&&!!data;
+  $('blockBtn').textContent=selectedBlocked?'🔓 إلغاء الحظر':'🚫 حظر';
+  $('messageInput').disabled=selectedBlocked;
+  $('messageInput').placeholder=selectedBlocked?'الحظر مفعّل — ألغِ الحظر للرسائل':'اكتب رسالة...';
+}
+
+async function toggleBlock(){
+  if(!selectedUser)return;
+  if(selectedBlocked){
+    const {error}=await supabase.from('blocks').delete().eq('blocker_id',currentUser.id).eq('blocked_id',selectedUser.id);
+    if(error){alert(error.message);return;}
+    selectedBlocked=false;
+  }else{
+    const {error}=await supabase.from('blocks').insert({blocker_id:currentUser.id,blocked_id:selectedUser.id});
+    if(error){alert(error.message);return;}
+    selectedBlocked=true;
+  }
+  await refreshSafetyActions();
+  await loadUsers($('search').value.trim());
+  if(selectedBlocked){
+    $('messages').innerHTML='<p class="muted">تم حظر هذا المستخدم. لن تتمكن من مراسلته.</p>';
+  }else{
+    await loadMessages();
+  }
+}
+
+async function reportSelected(){
+  if(!selectedUser)return;
+  const reason=prompt(\`سبب التبليغ؟\n\n1 - حساب مزيف\n2 - إساءة أو تحرش\n3 - طلب مال أو احتيال\n4 - محتوى غير مناسب\n5 - سبب آخر\`);
+  if(!reason)return;
+  const details=prompt('تفاصيل إضافية (اختياري):')||null;
+  const {error}=await supabase.from('reports').insert({
+    reporter_id:currentUser.id,
+    reported_id:selectedUser.id,
+    reason:reason.slice(0,500),
+    details:details?details.slice(0,2000):null
+  });
+  if(error){alert(error.message);return;}
+  alert('تم إرسال التبليغ للإدارة. شكرًا لمساعدتك في الحفاظ على أمان الموقع.');
+}
+
+async function loadMessages(){
   if(!selectedUser)return;
   const {data,error}=await supabase.from('messages').select('*')
     .or('and(sender_id.eq.'+currentUser.id+',receiver_id.eq.'+selectedUser.id+'),and(sender_id.eq.'+selectedUser.id+',receiver_id.eq.'+currentUser.id+')')
