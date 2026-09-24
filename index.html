@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="موقع النور - دردشة وتواصل محترم">
+<title>موقع النور | دردشة</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="logo">ن</span><div><b>موقع النور</b><small>دردشة وتواصل محترم</small></div></div>
+    <button class="icon-btn" id="profileBtn" aria-label="الملف الشخصي">👤</button>
+  </header>
+
+  <main class="chat-layout">
+    <aside class="sidebar">
+      <div class="side-head"><h1>المحادثات</h1><button class="new-btn" id="newChatBtn">＋</button></div>
+      <label class="search"><span>⌕</span><input id="searchInput" placeholder="ابحث عن محادثة"></label>
+      <div id="chatList" class="chat-list"></div>
+    </aside>
+
+    <section class="chat-panel">
+      <div class="empty-chat" id="emptyChat">
+        <div class="empty-icon">💬</div>
+        <h2>أهلًا بك في موقع النور</h2>
+        <p>ابدأ محادثة محترمة وآمنة مع شخص تعرفت عليه.</p>
+        <button class="primary" id="startBtn">ابدأ محادثة</button>
+      </div>
+
+      <div class="conversation hidden" id="conversation">
+        <div class="conversation-head">
+          <button class="back-btn" id="backBtn">→</button>
+          <div class="avatar" id="chatAvatar">م</div>
+          <div class="person"><b id="chatName">محمد</b><small id="chatStatus">متصل الآن</small></div>
+          <button class="icon-btn" id="moreBtn">⋮</button>
+        </div>
+        <div class="messages" id="messages"></div>
+        <form class="composer" id="messageForm">
+          <input id="messageInput" autocomplete="off" placeholder="اكتب رسالة..." maxlength="1000">
+          <button class="send" type="submit">➤</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <nav class="mobile-nav">
+    <button class="active">💬<span>المحادثات</span></button>
+    <button id="peopleBtn">👥<span>الأشخاص</span></button>
+    <button id="mobileProfileBtn">👤<span>حسابي</span></button>
+  </nav>
+</div>
+
+<div class="modal hidden" id="authModal">
+  <div class="modal-card">
+    <button class="close" data-close>×</button>
+    <div class="modal-logo">ن</div>
+    <h2>مرحبًا بك في موقع النور</h2>
+    <p>سجّل الدخول للبدء في الدردشة.</p>
+    <div class="tabs"><button class="active" data-tab="login">دخول</button><button data-tab="signup">إنشاء حساب</button></div>
+    <form id="loginForm">
+      <label>اسم المستخدم<input required placeholder="اسم المستخدم"></label>
+      <label>كلمة المرور<input required type="password" placeholder="كلمة المرور"></label>
+      <button class="primary full">تسجيل الدخول</button>
+    </form>
+    <form id="signupForm" class="hidden">
+      <label>اسم المستخدم<input required placeholder="مثال: mohamed31"></label>
+      <label>كلمة المرور<input required type="password" minlength="6" placeholder="6 أحرف على الأقل"></label>
+      <button class="primary full">إنشاء حساب</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal hidden" id="profileModal">
+  <div class="modal-card small">
+    <button class="close" data-close>×</button>
+    <div class="modal-logo">ن</div>
+    <h2>حسابي</h2>
+    <p>سيتم ربط الحساب والمصادقة الحقيقية في المرحلة التالية.</p>
+    <button class="outline full" data-close>إغلاق</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
