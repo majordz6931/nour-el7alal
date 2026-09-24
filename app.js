@@ -300,6 +300,7 @@ async function showSection(section){
   return
  }
  if(section==="discover"){
+ await refreshLikes();
  panel.innerHTML='<div class="panel-head"><h3>البحث المتقدم 🔎</h3><button id="closePanel">×</button></div>'+
  '<div class="advanced-search">'+
  '<div class="search-title">ابحث عن الشخص المناسب</div>'+
