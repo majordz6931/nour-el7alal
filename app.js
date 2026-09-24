@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const { createClient } = window.supabase;
 
 const SUPABASE_URL='https://fnkvlmrzzxptncrqpyyz.supabase.co';
 const SUPABASE_KEY='sb_publishable_hwffg3R4YzXTMnDu8-ZMDQ_1NuLnAfY';
@@ -514,9 +514,20 @@ function escAttr(value){
   return esc(value).replace(/'/g,'&#39;');
 }
 
-const {data:{session}}=await supabase.auth.getSession();
-if(session)await init(session.user);
-
-supabase.auth.onAuthStateChange((_event,session)=>{
-  if(session&&!currentUser)init(session.user);
-});
+(async()=>{
+  try{
+    const {data:{session}}=await supabase.auth.getSession();
+    if(session)await init(session.user);
+  }catch(error){
+    console.error('App startup error:',error);
+    const msg=document.getElementById('authMsg');
+    if(msg)msg.textContent='تعذر تشغيل التطبيق. أعد تحميل الصفحة.';
+  }
+  supabase.auth.onAuthStateChange((_event,session)=>{
+    if(session&&!currentUser)init(session.user).catch(error=>{
+      console.error('Auth init error:',error);
+      const msg=document.getElementById('authMsg');
+      if(msg)msg.textContent='تم تسجيل الدخول لكن تعذر فتح الدردشة.';
+    });
+  });
+})();
