@@ -390,6 +390,31 @@
       });
   }
 
+  async function refreshOpenChat(){
+    if(!currentUser?.id || !currentChatUser)return;
+    try{
+      const {data,error}=await sb.from("messages").select("*")
+        .or("sender_id.eq."+currentUser.id+",receiver_id.eq."+currentUser.id)
+        .order("created_at",{ascending:true});
+      if(error)throw error;
+      DB.messages={};
+      for(const m of (data||[])){
+        const k=keyOf(m.sender_id,m.receiver_id);
+        if(!DB.messages[k])DB.messages[k]=[];
+        let url=m.media_url||"";
+        if(url && (m.message_type==="image"||m.message_type==="voice")){
+          const {data:signed}=await sb.storage.from("chat-media").createSignedUrl(url,3600);
+          url=signed?.signedUrl||"";
+        }
+        DB.messages[k].push({id:"m"+m.id,dbId:m.id,from:m.sender_id,to:m.receiver_id,type:m.message_type,text:m.content||"",url,dur:m.duration_seconds?("0:"+String(m.duration_seconds).padStart(2,"0")):"0:00",time:timeOf(m.created_at),read:!!m.read_at});
+      }
+      renderChatMsgs();
+      renderConvList();
+    }catch(e){console.error("Chat refresh:",e);}
+  }
+
   setInterval(()=>{if(currentUser&&!role())setPresence(true);},20000);
+  setInterval(()=>{if(currentUser&&currentChatUser&&!document.hidden)refreshOpenChat();},2500);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&currentUser&&currentChatUser)refreshOpenChat();});
   boot();
 })();
