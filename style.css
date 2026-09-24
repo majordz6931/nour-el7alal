@@ -378,3 +378,30 @@
     max-width:min(58%,720px)!important;
   }
 }
+
+
+/* Desktop true full-viewport workspace */
+@media (min-width:701px){
+  html,body{width:100%;min-width:0;overflow-x:hidden}
+  .shell{
+    width:100vw!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:16px 16px 24px!important;
+  }
+  .chat{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+  }
+  .chat-app{
+    width:100%!important;
+    grid-template-columns:390px minmax(0,1fr)!important;
+    height:calc(100vh - 210px)!important;
+    min-height:680px!important;
+    max-height:none!important;
+  }
+  .chat-sidebar,.room{min-width:0!important;width:auto!important}
+  #users{height:calc(100% - 126px)!important;max-height:none!important}
+  .messages{min-width:0!important}
+}
