@@ -114,10 +114,9 @@ function showModerationChoice(id,name){
     const blocked=state.blockedIds.has(id);
     const modal=document.createElement("div");
     modal.className="moderation-modal";
-    modal.innerHTML='<div class="moderation-card" role="dialog" aria-modal="true"><div class="moderation-head"><strong>إدارة العضو</strong><button type="button" class="moderation-close">×</button></div><p class="moderation-name">'+escapeHtml(name||"العضو")+'</p><button type="button" class="mini-action chat-profile-open">👤 عرض الملف الشخصي</button><select class="moderation-select" id="moderationAction"><option value="">اختر الإجراء...</option><option value="block">'+(blocked?"🔓 فك الحظر":"🚫 حظر العضو")+'</option><option value="report">⚠️ إبلاغ عن العضو</option></select><div class="moderation-footer"><button type="button" class="moderation-cancel">إلغاء</button><button type="button" class="moderation-confirm">متابعة</button></div></div>';
+    modal.innerHTML='<div class="moderation-card" role="dialog" aria-modal="true"><div class="moderation-head"><strong>إدارة العضو</strong><button type="button" class="moderation-close">×</button></div><p class="moderation-name">'+escapeHtml(name||"العضو")+'</p><select class="moderation-select" id="moderationAction"><option value="">اختر الإجراء...</option><option value="block">'+(blocked?"🔓 فك الحظر":"🚫 حظر العضو")+'</option><option value="report">⚠️ إبلاغ عن العضو</option></select><div class="moderation-footer"><button type="button" class="moderation-cancel">إلغاء</button><button type="button" class="moderation-confirm">متابعة</button></div></div>';
     document.body.appendChild(modal);
     const finish=a=>{closeModerationModal();resolve(a)};
-    modal.querySelector(".chat-profile-open").onclick=()=>{closeModerationModal();showChatProfile(id)};
     modal.querySelector(".moderation-close").onclick=()=>finish(null);
     modal.querySelector(".moderation-cancel").onclick=()=>finish(null);
     modal.onclick=e=>{if(e.target===modal)finish(null)};
