@@ -130,7 +130,7 @@
 
   async function logoutReal(){
     try{await setPresence(false);await sb.auth.signOut();}catch(_){}
-    currentUser=null;currentChatUser=null;
+    currentUser=null;currentChatUser=null;window.__nourChatSig='';
     if(realtimeChannel){try{await sb.removeChannel(realtimeChannel);}catch(_){} realtimeChannel=null;}
     document.getElementById("screen-app").classList.remove("active");
     document.getElementById("screen-admin").classList.remove("active");
@@ -397,6 +397,9 @@
         .or("sender_id.eq."+currentUser.id+",receiver_id.eq."+currentUser.id)
         .order("created_at",{ascending:true});
       if(error)throw error;
+      const chatSig=(data||[]).map(m=>[m.id,m.sender_id,m.receiver_id,m.content,m.message_type,m.media_url,m.duration_seconds,m.read_at,m.created_at].join("~")).join("|");
+      if(chatSig===window.__nourChatSig)return;
+      window.__nourChatSig=chatSig;
       DB.messages={};
       for(const m of (data||[])){
         const k=keyOf(m.sender_id,m.receiver_id);
