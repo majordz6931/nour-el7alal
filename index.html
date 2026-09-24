@@ -21,7 +21,7 @@
   <div class="notice">🔞 هذا الموقع مخصص للبالغين من عمر 18 سنة فأكثر.</div>
   <div class="tabs">
     <button class="active" data-tab="register">إنشاء حساب</button>
-    <button data-tab="login">تسجيل الدخول</button>
+    <button type="button" data-tab="login" id="loginTab">تسجيل الدخول</button>
   </div>
   <form id="registerForm">
     <label>اسم المستخدم<input id="username" required minlength="3" maxlength="30" autocomplete="username"></label>
@@ -37,7 +37,7 @@
   <form id="loginForm" hidden>
     <label>اسم المستخدم<input id="loginUsername" required autocomplete="username"></label>
     <label>كلمة المرور<input id="loginPassword" type="password" required autocomplete="current-password"></label>
-    <button class="primary" type="submit">دخول</button>
+    <button class="primary" type="submit" id="loginSubmit">دخول</button>
   </form>
   <p class="msg" id="authMsg"></p>
 </section>
