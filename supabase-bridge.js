@@ -87,6 +87,7 @@ function usernameEmail(username){return "u_"+Array.from(new TextEncoder().encode
     if(data.session) {
       const {error}=await sb.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
       if(error) throw error;
+      try{localStorage.setItem("nour_auth_session",JSON.stringify(data.session));}catch(_){}
     }
     return data;
   }
@@ -416,6 +417,16 @@ function usernameEmail(username){return "u_"+Array.from(new TextEncoder().encode
       try{
         const {data:{session}}=await sb.auth.getSession();
         if(await restoreSession(session))return;
+        try{
+          const raw=localStorage.getItem("nour_auth_session");
+          if(raw){
+            const saved=JSON.parse(raw);
+            if(saved?.access_token&&saved?.refresh_token){
+              const s=await sb.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token});
+              if(s.data?.session&&await restoreSession(s.data.session))return;
+            }
+          }
+        }catch(e){console.warn("Saved session restore:",e);}
       }catch(e){console.error("Supabase boot:",e);}
       await new Promise(r=>setTimeout(r,300+attempt*100));
     }
