@@ -1,13 +1,10 @@
 (() => {
-  const originalRegister=window.doRegister;
-  window.doRegister=async function(ev){
-    const g=document.getElementById("r-gender");
-    const old=g.value;
-    g.value=old==="أنثى"?"female":"male";
-    try{return await originalRegister(ev);}finally{g.value=old;}
-  };
+  // Registration gender is normalized inside supabase-bridge.js.
+  // Do not change the select value here: its options are Arabic labels.
   const hideLegacySecret=()=>document.querySelector("#login-form p")?.remove();
   hideLegacySecret();
   const oldOpenAdmin=window.openAdmin;
-  window.openAdmin=async function(){hideLegacySecret();return oldOpenAdmin();};
+  if(oldOpenAdmin){
+    window.openAdmin=async function(){hideLegacySecret();return oldOpenAdmin();};
+  }
 })();
