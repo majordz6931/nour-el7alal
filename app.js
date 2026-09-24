@@ -16,47 +16,50 @@ const WILAYAS=[
 'قصر البخاري','العريشة'
 ];
 
-let mode='login', currentUser=null, selectedUser=null, messageChannel=null, selectedBlocked=false;
+let mode='login';
+let currentUser=null;
+let currentProfile=null;
+let selectedUser=null;
+let messageChannel=null;
+let presenceChannel=null;
+let selectedBlocked=false;
+
 const $=id=>document.getElementById(id);
 
-function fillWilayas(select, selected=''){
-  select.innerHTML='<option value="">اختر الولاية</option>'+WILAYAS.map(w=>`<option value="${escAttr(w)}">${esc(w)}</option>`).join('');
-  if(selected) select.value=selected;
+function fillWilayas(select){
+  if(!select)return;
+  select.innerHTML='<option value="">اختر الولاية</option>'+WILAYAS.map(w=>'<option value="'+escAttr(w)+'">'+esc(w)+'</option>').join('');
 }
 fillWilayas($('wilaya'));
-fillWilayas($('pWilaya'));
 
 function setMaxDob(){
   const d=new Date();
   d.setFullYear(d.getFullYear()-18);
   $('dateOfBirth').max=d.toISOString().slice(0,10);
-  $('pDateOfBirth').max=d.toISOString().slice(0,10);
 }
 setMaxDob();
 
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
-  mode=b.dataset.tab;
-  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));
-  $('signupFields').classList.toggle('hidden',mode!=='signup');
-  $('password').autocomplete=mode==='login'?'current-password':'new-password';
-  $('authSubmit').textContent=mode==='login'?'تسجيل الدخول':'إنشاء الحساب';
-  $('authMsg').textContent='';
-  $('dateOfBirth').required=mode==='signup';
-  $('wilaya').required=mode==='signup';
-  $('avatar').required=mode==='signup';
+document.querySelectorAll('.tab').forEach(button=>{
+  button.onclick=()=>{
+    mode=button.dataset.tab;
+    document.querySelectorAll('.tab').forEach(tab=>tab.classList.toggle('active',tab===button));
+    $('signupFields').classList.toggle('hidden',mode!=='signup');
+    $('password').autocomplete=mode==='login'?'current-password':'new-password';
+    $('authSubmit').textContent=mode==='login'?'تسجيل الدخول':'إنشاء الحساب';
+    $('authMsg').textContent='';
+    $('dateOfBirth').required=mode==='signup';
+    $('wilaya').required=mode==='signup';
+    $('avatar').required=mode==='signup';
+  };
 });
 
 $('avatar').onchange=()=>{
   const file=$('avatar').files[0];
   previewFile(file,$('avatarPreview'));
 };
-$('pAvatar').onchange=()=>{
-  const file=$('pAvatar').files[0];
-  previewFile(file,$('profileAvatarPreview'));
-};
 
-$('authForm').onsubmit=async e=>{
-  e.preventDefault();
+$('authForm').onsubmit=async event=>{
+  event.preventDefault();
   $('authMsg').textContent='جاري التنفيذ...';
 
   const username=$('username').value.trim().toLowerCase();
@@ -73,90 +76,109 @@ $('authForm').onsubmit=async e=>{
       $('authMsg').textContent='اسم المستخدم: 3 إلى 24 حرفًا، حروف إنجليزية صغيرة أو أرقام أو _ . -';
       return;
     }
-    if(!isAdult(date_of_birth)){ $('authMsg').textContent='يجب أن يكون عمرك 18 سنة أو أكثر'; return; }
-    if(!wilaya){ $('authMsg').textContent='اختر الولاية'; return; }
-    if(!['male','female'].includes(gender)){ $('authMsg').textContent='اختر الجنس'; return; }
-    if(!['male','female'].includes(seeking)){ $('authMsg').textContent='حدد من تبحث عنه للزواج'; return; }
-    if(!avatar){ $('authMsg').textContent='صورة البروفيل مطلوبة'; return; }
-    if(!validImage(avatar)){ $('authMsg').textContent='الصورة يجب أن تكون JPG أو PNG أو WEBP وأقل من 5MB'; return; }
+    if(!isAdult(date_of_birth)){
+      $('authMsg').textContent='يجب أن يكون عمرك 18 سنة أو أكثر';
+      return;
+    }
+    if(!wilaya){
+      $('authMsg').textContent='اختر الولاية';
+      return;
+    }
+    if(!['male','female'].includes(gender)){
+      $('authMsg').textContent='اختر الجنس';
+      return;
+    }
+    if(!['male','female'].includes(seeking)){
+      $('authMsg').textContent='حدد من تبحث عنه للزواج';
+      return;
+    }
+    if(!avatar){
+      $('authMsg').textContent='صورة البروفيل مطلوبة';
+      return;
+    }
+    if(!validImage(avatar)){
+      $('authMsg').textContent='الصورة يجب أن تكون JPG أو PNG أو WEBP وأقل من 5MB';
+      return;
+    }
 
     const result=await usernameAuth('signup',{username,password,date_of_birth,wilaya,gender,seeking});
-    if(result.error){ $('authMsg').textContent=result.error; return; }
+    if(result.error){
+      $('authMsg').textContent=result.error;
+      return;
+    }
+
     const sessionResult=await supabase.auth.setSession(result.session);
-    if(sessionResult.error){ $('authMsg').textContent=sessionResult.error.message; return; }
+    if(sessionResult.error){
+      $('authMsg').textContent=sessionResult.error.message;
+      return;
+    }
+
     const upload=await uploadAvatar(avatar);
-    if(upload.error){
-      $('authMsg').textContent='تم إنشاء الحساب، لكن تعذر رفع الصورة. يمكنك رفعها من الملف الشخصي.';
-    }else{
+    if(!upload.error){
       await saveProfile({avatar_url:upload.url});
     }
+
     $('authMsg').textContent='تم إنشاء الحساب بنجاح ✓';
+    await init(result.session.user);
     return;
   }
 
   const result=await usernameAuth('login',{username,password});
-  if(result.error){ $('authMsg').textContent=result.error; return; }
+  if(result.error){
+    $('authMsg').textContent=result.error;
+    return;
+  }
+
   const sessionResult=await supabase.auth.setSession(result.session);
-  if(sessionResult.error){ $('authMsg').textContent=sessionResult.error.message; return; }
+  if(sessionResult.error){
+    $('authMsg').textContent=sessionResult.error.message;
+    return;
+  }
+
+  await init(result.session.user);
 };
 
 $('logoutBtn').onclick=async()=>{
+  if(presenceChannel)await supabase.removeChannel(presenceChannel);
+  if(messageChannel)await supabase.removeChannel(messageChannel);
   await supabase.auth.signOut({scope:'local'});
   location.reload();
 };
 
-$('profileForm').onsubmit=async e=>{
-  e.preventDefault();
-  if(!currentUser)return;
-  $('profileMsg').textContent='جاري الحفظ...';
+$('blockBtn').onclick=toggleBlock;
+$('reportBtn').onclick=reportSelected;
 
-  const dob=$('pDateOfBirth').value;
-  const wilaya=$('pWilaya').value;
-  if(!isAdult(dob)){ $('profileMsg').textContent='يجب أن يكون العمر 18 سنة أو أكثر'; return; }
-  if(!wilaya){ $('profileMsg').textContent='اختر الولاية'; return; }
+$('messageForm').onsubmit=async event=>{
+  event.preventDefault();
+  if(!selectedUser||selectedBlocked)return;
 
-  let avatar_url;
-  const file=$('pAvatar').files[0];
-  if(file){
-    if(!validImage(file)){ $('profileMsg').textContent='الصورة يجب أن تكون JPG أو PNG أو WEBP وأقل من 5MB'; return; }
-    const upload=await uploadAvatar(file);
-    if(upload.error){ $('profileMsg').textContent=upload.error; return; }
-    avatar_url=upload.url;
-  }
-
-  const gender=$('pGender').value;
-  const seeking=$('pSeeking').value;
-  if(!['male','female'].includes(gender)||!['male','female'].includes(seeking)){ $('profileMsg').textContent='اختر الجنس ومن تبحث عنه'; return; }
-  const data={date_of_birth:dob,wilaya,gender,seeking};
-  if(avatar_url)data.avatar_url=avatar_url;
-  const {error}=await supabase.from('profiles').update(data).eq('id',currentUser.id);
-  $('profileMsg').textContent=error?error.message:'تم حفظ الملف ✓';
-  if(!error){$('pAvatar').value='';await loadProfile();await loadUsers();}
-};
-
-$('search').oninput=()=>loadUsers($('search').value.trim());
-
-$('blockBtn').onclick=toggleBlock;\n$('reportBtn').onclick=reportSelected;\n\n$('messageForm').onsubmit=async e=>{
-  e.preventDefault();
-  if(!selectedUser)return;
-  if(selectedBlocked){ $('messages').innerHTML='<p class="muted">تم حظر هذا المستخدم. ألغِ الحظر أولاً لإرسال رسالة.</p>'; return; }
   const content=$('messageInput').value.trim();
   if(!content)return;
-  const {error}=await supabase.from('messages').insert({sender_id:currentUser.id,receiver_id:selectedUser.id,content});
-  if(error){alert(error.message);return}
+
+  const {error}=await supabase.from('messages').insert({
+    sender_id:currentUser.id,
+    receiver_id:selectedUser.id,
+    content
+  });
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
   $('messageInput').value='';
-  loadMessages();
+  await loadMessages();
 };
 
 async function usernameAuth(action,body){
   try{
-    const res=await fetch(AUTH_FUNCTION,{
+    const response=await fetch(AUTH_FUNCTION,{
       method:'POST',
       headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
       body:JSON.stringify({action,...body})
     });
-    const data=await res.json().catch(()=>({error:'استجابة غير صالحة'}));
-    if(!res.ok)return {error:data.error||'تعذر تنفيذ الطلب'};
+    const data=await response.json().catch(()=>({error:'استجابة غير صالحة'}));
+    if(!response.ok)return {error:data.error||'تعذر تنفيذ الطلب'};
     return data;
   }catch(error){
     return {error:'تعذر الاتصال بخدمة تسجيل الدخول'};
@@ -164,103 +186,199 @@ async function usernameAuth(action,body){
 }
 
 async function init(user){
-  if(currentUser?.id===user?.id)return;
+  if(currentUser?.id===user?.id && presenceChannel)return;
+
   currentUser=user;
   $('authView').classList.add('hidden');
   $('appView').classList.remove('hidden');
   $('logoutBtn').classList.remove('hidden');
-  await loadProfile();
-  await loadUsers();
 
-  if(messageChannel)await supabase.removeChannel(messageChannel);
-  messageChannel=supabase.channel('messages-live').on('postgres_changes',{
-    event:'INSERT',schema:'public',table:'messages'
-  },payload=>{
-    if(selectedUser&&(
-      (payload.new.sender_id===currentUser.id&&payload.new.receiver_id===selectedUser.id)||
-      (payload.new.sender_id===selectedUser.id&&payload.new.receiver_id===currentUser.id)
-    ))loadMessages();
-  }).subscribe();
+  await loadProfile();
+  await startPresence();
+  await startMessages();
+  resetChat();
 }
 
 async function loadProfile(){
   const {data,error}=await supabase.from('profiles')
     .select('id,username,date_of_birth,wilaya,gender,seeking,avatar_url')
-    .eq('id',currentUser.id).maybeSingle();
-  if(error){$('profileMsg').textContent=error.message;return}
-  if(!data)return;
-  $('pUsername').value=data.username||'';
-  $('pDateOfBirth').value=data.date_of_birth||'';
-  $('pWilaya').value=data.wilaya||'';
-  $('pGender').value=data.gender||'';
-  $('pSeeking').value=data.seeking||'';
-  showImage($('profileAvatarPreview'),data.avatar_url);
+    .eq('id',currentUser.id)
+    .maybeSingle();
+
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  currentProfile=data||null;
 }
 
-async function loadUsers(q=''){
-  let query=supabase.from('profiles')
-    .select('id,username,date_of_birth,wilaya,gender,seeking,avatar_url,created_at')
-    .neq('id',currentUser.id)
-    .order('created_at',{ascending:false})
-    .limit(50);
+async function startPresence(){
+  if(presenceChannel)await supabase.removeChannel(presenceChannel);
 
-  if(q)query=query.or('username.ilike.%'+q+'%,wilaya.ilike.%'+q+'%');
-
-  const {data,error}=await query;
-  if(error){$('users').textContent=error.message;return}
-
-  $('users').innerHTML=(data||[]).map(u=>`
-    <div class="user" data-id="${escAttr(u.id)}">
-      <img class="user-avatar" src="${escAttr(u.avatar_url||'')}" alt="" onerror="this.style.display='none'">
-      <div>
-        <b>${esc(u.username)}</b>
-        <div class="muted">${u.date_of_birth?ageFromDob(u.date_of_birth)+' سنة':''}${u.wilaya?' · '+esc(u.wilaya):''}</div>
-      </div>
-    </div>`).join('')||'<p class="muted">لا توجد نتائج.</p>';
-
-  document.querySelectorAll('.user').forEach(el=>el.onclick=async()=>{
-    selectedUser=(data||[]).find(u=>u.id===el.dataset.id);
-    if(!selectedUser)return;
-    $('chatTitle').textContent='محادثة مع '+selectedUser.username;
-    $('safetyActions').classList.remove('hidden');
-    await refreshSafetyActions();
-    await loadMessages();
+  presenceChannel=supabase.channel('nour-el7alal-online',{
+    config:{presence:{key:currentUser.id}}
   });
+
+  presenceChannel
+    .on('presence',{event:'sync'},renderOnlineUsers)
+    .on('presence',{event:'join'},renderOnlineUsers)
+    .on('presence',{event:'leave'},renderOnlineUsers)
+    .subscribe(async status=>{
+      if(status==='SUBSCRIBED'){
+        await presenceChannel.track({
+          userId:currentUser.id,
+          username:currentProfile?.username||userLabel(),
+          avatar_url:currentProfile?.avatar_url||null,
+          online_at:new Date().toISOString()
+        });
+      }
+    });
+}
+
+async function renderOnlineUsers(){
+  if(!presenceChannel)return;
+
+  const state=presenceChannel.presenceState();
+  const ids=new Set();
+
+  Object.values(state).forEach(entries=>{
+    (entries||[]).forEach(entry=>{
+      if(entry?.userId && entry.userId!==currentUser.id)ids.add(entry.userId);
+    });
+  });
+
+  const userIds=[...ids];
+  $('onlineCount').textContent=userIds.length+' متصل';
+
+  if(!userIds.length){
+    $('onlineUsers').innerHTML='<div class="empty-online"><div class="empty-icon small">🟢</div><p>لا يوجد أشخاص متصلون الآن</p><span>عندما يتصل شخص سيظهر هنا</span></div>';
+    return;
+  }
+
+  const {data,error}=await supabase.from('profiles')
+    .select('id,username,date_of_birth,wilaya,gender,seeking,avatar_url')
+    .in('id',userIds)
+    .order('username');
+
+  if(error){
+    $('onlineUsers').innerHTML='<p class="muted">تعذر تحميل قائمة المتصلين.</p>';
+    return;
+  }
+
+  $('onlineUsers').innerHTML=(data||[]).map(user=>`
+    <button class="online-user ${selectedUser?.id===user.id?'selected':''}" data-id="${escAttr(user.id)}" type="button">
+      <span class="avatar-wrap">
+        ${user.avatar_url?'<img class="user-avatar" src="'+escAttr(user.avatar_url)+'" alt="">':'<span class="user-avatar fallback">👤</span>'}
+        <span class="online-dot"></span>
+      </span>
+      <span class="online-user-info">
+        <strong>${esc(user.username)}</strong>
+        <small>${user.wilaya?esc(user.wilaya):'متصل الآن'}${user.date_of_birth?' · '+ageFromDob(user.date_of_birth)+' سنة':''}</small>
+      </span>
+      <span class="chevron">‹</span>
+    </button>
+  `).join('');
+
+  document.querySelectorAll('.online-user').forEach(button=>{
+    button.onclick=async()=>{
+      const user=(data||[]).find(item=>item.id===button.dataset.id);
+      if(user)await selectUser(user);
+    };
+  });
+}
+
+async function selectUser(user){
+  selectedUser=user;
+  $('chatTitle').textContent=user.username;
+  $('chatStatus').textContent=(user.wilaya?user.wilaya+' · ':'')+'متصل الآن';
+  $('safetyActions').classList.remove('hidden');
+  setChatAvatar(user.avatar_url);
+  $('messageInput').disabled=false;
+  $('sendBtn').disabled=false;
+  await refreshSafetyActions();
+  await loadMessages();
+  renderOnlineUsers();
+}
+
+function resetChat(){
+  selectedUser=null;
+  $('chatTitle').textContent='اختر شخصًا';
+  $('chatStatus').textContent='اختر شخصًا من المتصلين لبدء الدردشة';
+  $('safetyActions').classList.add('hidden');
+  $('messageInput').disabled=true;
+  $('sendBtn').disabled=true;
+  $('messageInput').value='';
+  setChatAvatar(null);
+  $('messages').innerHTML='<div class="empty-chat"><div class="empty-icon">💬</div><h3>ابدأ محادثة</h3><p class="muted">اختر شخصًا متصلًا من القائمة</p></div>';
+}
+
+async function startMessages(){
+  if(messageChannel)await supabase.removeChannel(messageChannel);
+
+  messageChannel=supabase.channel('messages-live')
+    .on('postgres_changes',{
+      event:'INSERT',
+      schema:'public',
+      table:'messages'
+    },payload=>{
+      if(selectedUser&&(
+        (payload.new.sender_id===currentUser.id&&payload.new.receiver_id===selectedUser.id)||
+        (payload.new.sender_id===selectedUser.id&&payload.new.receiver_id===currentUser.id)
+      )){
+        loadMessages();
+      }
+    })
+    .subscribe();
 }
 
 async function refreshSafetyActions(){
   if(!selectedUser)return;
-  const {data,error}=await supabase.from('blocks').select('blocked_id').eq('blocked_id',selectedUser.id).maybeSingle();
+
+  const {data,error}=await supabase.from('blocks')
+    .select('blocked_id')
+    .eq('blocker_id',currentUser.id)
+    .eq('blocked_id',selectedUser.id)
+    .maybeSingle();
+
   selectedBlocked=!error&&!!data;
   $('blockBtn').textContent=selectedBlocked?'🔓 إلغاء الحظر':'🚫 حظر';
   $('messageInput').disabled=selectedBlocked;
+  $('sendBtn').disabled=selectedBlocked;
   $('messageInput').placeholder=selectedBlocked?'الحظر مفعّل — ألغِ الحظر للرسائل':'اكتب رسالة...';
+
+  if(selectedBlocked){
+    $('messages').innerHTML='<div class="empty-chat"><div class="empty-icon">🚫</div><h3>تم حظر هذا المستخدم</h3><p class="muted">ألغِ الحظر لإرسال الرسائل.</p></div>';
+  }
 }
 
 async function toggleBlock(){
   if(!selectedUser)return;
+
   if(selectedBlocked){
-    const {error}=await supabase.from('blocks').delete().eq('blocker_id',currentUser.id).eq('blocked_id',selectedUser.id);
+    const {error}=await supabase.from('blocks')
+      .delete()
+      .eq('blocker_id',currentUser.id)
+      .eq('blocked_id',selectedUser.id);
     if(error){alert(error.message);return;}
-    selectedBlocked=false;
   }else{
-    const {error}=await supabase.from('blocks').insert({blocker_id:currentUser.id,blocked_id:selectedUser.id});
+    const {error}=await supabase.from('blocks').insert({
+      blocker_id:currentUser.id,
+      blocked_id:selectedUser.id
+    });
     if(error){alert(error.message);return;}
-    selectedBlocked=true;
   }
+
   await refreshSafetyActions();
-  await loadUsers($('search').value.trim());
-  if(selectedBlocked){
-    $('messages').innerHTML='<p class="muted">تم حظر هذا المستخدم. لن تتمكن من مراسلته.</p>';
-  }else{
-    await loadMessages();
-  }
+  if(!selectedBlocked)await loadMessages();
 }
 
 async function reportSelected(){
   if(!selectedUser)return;
-  const reason=prompt(\`سبب التبليغ؟\n\n1 - حساب مزيف\n2 - إساءة أو تحرش\n3 - طلب مال أو احتيال\n4 - محتوى غير مناسب\n5 - سبب آخر\`);
+
+  const reason=prompt('سبب التبليغ؟\\n\\n1 - حساب مزيف\\n2 - إساءة أو تحرش\\n3 - طلب مال أو احتيال\\n4 - محتوى غير مناسب\\n5 - سبب آخر');
   if(!reason)return;
+
   const details=prompt('تفاصيل إضافية (اختياري):')||null;
   const {error}=await supabase.from('reports').insert({
     reporter_id:currentUser.id,
@@ -268,27 +386,46 @@ async function reportSelected(){
     reason:reason.slice(0,500),
     details:details?details.slice(0,2000):null
   });
+
   if(error){alert(error.message);return;}
   alert('تم إرسال التبليغ للإدارة. شكرًا لمساعدتك في الحفاظ على أمان الموقع.');
 }
 
 async function loadMessages(){
   if(!selectedUser)return;
+
   const {data,error}=await supabase.from('messages').select('*')
     .or('and(sender_id.eq.'+currentUser.id+',receiver_id.eq.'+selectedUser.id+'),and(sender_id.eq.'+selectedUser.id+',receiver_id.eq.'+currentUser.id+')')
     .order('created_at',{ascending:true});
-  if(error){$('messages').textContent=error.message;return}
-  $('messages').innerHTML=(data||[]).map(m=>'<div class="bubble '+(m.sender_id===currentUser.id?'mine':'')+'">'+esc(m.content)+'</div>').join('');
+
+  if(error){
+    $('messages').textContent=error.message;
+    return;
+  }
+
+  if(!data?.length){
+    $('messages').innerHTML='<div class="empty-chat"><div class="empty-icon">💬</div><h3>لا توجد رسائل بعد</h3><p class="muted">ابدأ الحديث برسالة محترمة.</p></div>';
+  }else{
+    $('messages').innerHTML=data.map(message=>
+      '<div class="bubble '+(message.sender_id===currentUser.id?'mine':'')+'">'+esc(message.content)+'</div>'
+    ).join('');
+  }
+
   $('messages').scrollTop=$('messages').scrollHeight;
 }
 
 async function uploadAvatar(file){
   const ext=(file.type.split('/')[1]||'jpg').replace('jpeg','jpg');
   const path=`${currentUser.id}/avatar-${Date.now()}.${ext}`;
+
   const {error}=await supabase.storage.from('avatars').upload(path,file,{
-    cacheControl:'3600',upsert:false,contentType:file.type
+    cacheControl:'3600',
+    upsert:false,
+    contentType:file.type
   });
+
   if(error)return {error:error.message};
+
   const {data}=supabase.storage.from('avatars').getPublicUrl(path);
   return {url:data.publicUrl,path};
 }
@@ -297,11 +434,36 @@ async function saveProfile(data){
   return supabase.from('profiles').update(data).eq('id',currentUser.id);
 }
 
+function setChatAvatar(url){
+  const avatar=$('chatAvatar');
+  if(url){
+    avatar.innerHTML='<img src="'+escAttr(url)+'" alt="">';
+    avatar.classList.remove('placeholder');
+  }else{
+    avatar.innerHTML='👤';
+    avatar.classList.add('placeholder');
+  }
+}
+
+function userLabel(){
+  return currentUser?.user_metadata?.username||'مستخدم';
+}
+
 function previewFile(file,img){
-  if(!file){img.classList.add('hidden');img.removeAttribute('src');return}
-  if(!validImage(file)){img.classList.add('hidden');return}
+  if(!file){
+    img.classList.add('hidden');
+    img.removeAttribute('src');
+    return;
+  }
+  if(!validImage(file)){
+    img.classList.add('hidden');
+    return;
+  }
   const reader=new FileReader();
-  reader.onload=()=>{img.src=reader.result;img.classList.remove('hidden')};
+  reader.onload=()=>{
+    img.src=reader.result;
+    img.classList.remove('hidden');
+  };
   reader.readAsDataURL(file);
 }
 
@@ -315,8 +477,8 @@ function isAdult(value){
   if(Number.isNaN(dob.getTime()))return false;
   const now=new Date();
   let age=now.getFullYear()-dob.getFullYear();
-  const m=now.getMonth()-dob.getMonth();
-  if(m<0||(m===0&&now.getDate()<dob.getDate()))age--;
+  const month=now.getMonth()-dob.getMonth();
+  if(month<0||(month===0&&now.getDate()<dob.getDate()))age--;
   return age>=18&&age<=100;
 }
 
@@ -324,15 +486,22 @@ function ageFromDob(value){
   const dob=new Date(value+'T00:00:00');
   const now=new Date();
   let age=now.getFullYear()-dob.getFullYear();
-  const m=now.getMonth()-dob.getMonth();
-  if(m<0||(m===0&&now.getDate()<dob.getDate()))age--;
+  const month=now.getMonth()-dob.getMonth();
+  if(month<0||(month===0&&now.getDate()<dob.getDate()))age--;
   return age;
 }
 
-function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]||c));}
-function escAttr(s){return esc(s).replace(/'/g,'&#39;');}
-function showImage(img,url){
-  if(url){img.src=url;img.classList.remove('hidden')}else{img.removeAttribute('src');img.classList.add('hidden')}
+function esc(value){
+  return String(value??'').replace(/[&<>"]/g,char=>({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;'
+  }[char]||char));
+}
+
+function escAttr(value){
+  return esc(value).replace(/'/g,'&#39;');
 }
 
 const {data:{session}}=await supabase.auth.getSession();
