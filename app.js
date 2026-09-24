@@ -433,5 +433,4 @@ function initChatUX(){if(window.chatUX)return;window.chatUX=true;document.queryS
 async function boot(){const {data}=await supabaseClient.auth.getSession();if(data.session){try{await loadProfile(data.session.user.id);await showChat()}catch(err){console.error(err);await supabaseClient.auth.signOut()}}supabaseClient.auth.onAuthStateChange(async(event,session)=>{if(session&&!state.profile){try{await loadProfile(session.user.id);await showChat()}catch(err){console.error(err)}}})}
 $("#registerForm").onsubmit=register;
 $("#loginForm").onsubmit=login;
-$("#loginSubmit")?.addEventListener("click",e=>{e.preventDefault();login(e)});
 boot();
