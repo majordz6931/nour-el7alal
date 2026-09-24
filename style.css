@@ -147,3 +147,6 @@
 
 /* Remove bottom whitespace below chat on phones */
 @media(max-width:700px){body{overflow-x:hidden!important}.shell{padding-bottom:0!important}#chatView{margin-bottom:0!important;min-height:0!important}#chatView .chat-app{margin-bottom:0!important}#chatView .safety-bar{margin-bottom:0!important}}
+
+/* Final mobile chat: no empty area after the chat card */
+@media(max-width:700px){html,body{min-height:0!important;height:auto!important}body{overflow-y:auto!important}.shell{height:auto!important;min-height:0!important;padding:0!important;margin:0!important;width:100%!important}#chatView{height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;border-radius:0!important}#chatView .chat-app{height:calc(100dvh - 170px)!important;min-height:calc(100dvh - 170px)!important;max-height:calc(100dvh - 170px)!important}#chatView .safety-bar{margin:0!important}}
