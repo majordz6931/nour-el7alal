@@ -389,47 +389,45 @@ function usernameEmail(username){return "u_"+Array.from(new TextEncoder().encode
   }
   async function resolveReportReal(id){const {error}=await sb.from("reports").update({status:"resolved"}).eq("id",id);if(error)showToast("❌ "+safeErr(error));else{showToast("✅ تمت المعالجة");renderAdminReportsReal();}}
   function renderAdminChatReal(){renderAdminChat();}
-  async function boot(){
-    // بعد Refresh قد تحتاج جلسة Supabase لحظات حتى تُسترجع من التخزين المحلي.
-    // لا نعتبر غياب الجلسة/فشل الطلب المؤقت تسجيل خروج.
-    for(let attempt=0;attempt<6;attempt++){
-      try{
-        const {data:{session},error:sessionError}=await sb.auth.getSession();
-        if(sessionError) console.warn("Supabase session:",sessionError);
-        if(!session){
-          await new Promise(r=>setTimeout(r,300));
-          continue;
-        }
-
-        const {data:p,error}=await sb.from("profiles").select("*").eq("id",session.user.id).maybeSingle();
-        if(error||!p){
-          console.warn("Supabase profile boot:",error||"profile not found");
-          await new Promise(r=>setTimeout(r,400));
-          continue;
-        }
-
-        currentUser=mapProfile(p);
-        if(p.banned){await sb.auth.signOut();return;}
-        currentUser.role=session.user.app_metadata?.role==="admin"?"admin":currentUser.role;
-
-        if(currentUser.role==="admin"){
-          await setupRealtime();
-          openAdmin();
-        }else{
-          // لا ننتظر تحميل كل الرسائل/القلوب/القصص حتى تظهر الواجهة.
-          openApp();
-          Promise.allSettled([loadData(),setPresence(true),setupRealtime()]).then(()=>{
-            renderProfiles();renderConvList();updateProfilePage();renderStoriesReal();updateOnlineCount();
-          });
-        }
-        return;
-      }catch(e){
-        console.error("Supabase boot:",e);
-        await new Promise(r=>setTimeout(r,500));
+  let bootDone=false;
+  async function restoreSession(session){
+    if(bootDone||!session?.user?.id)return false;
+    try{
+      const {data:p,error}=await sb.from("profiles").select("*").eq("id",session.user.id).maybeSingle();
+      if(error||!p){console.warn("Supabase profile restore:",error||"profile not found");return false;}
+      currentUser=mapProfile(p);
+      if(p.banned){await sb.auth.signOut();return false;}
+      currentUser.role=session.user.app_metadata?.role==="admin"?"admin":currentUser.role;
+      bootDone=true;
+      if(currentUser.role==="admin"){
+        await setupRealtime(); openAdmin();
+      }else{
+        openApp();
+        Promise.allSettled([loadData(),setPresence(true),setupRealtime()]).then(()=>{
+          renderProfiles();renderConvList();updateProfilePage();renderStoriesReal();updateOnlineCount();
+        });
       }
-    }
-    console.warn("Supabase boot: session not restored after retries");
+      return true;
+    }catch(e){console.error("Supabase restore:",e);return false;}
   }
+
+  async function boot(){
+    for(let attempt=0;attempt<10&&!bootDone;attempt++){
+      try{
+        const {data:{session}}=await sb.auth.getSession();
+        if(await restoreSession(session))return;
+      }catch(e){console.error("Supabase boot:",e);}
+      await new Promise(r=>setTimeout(r,300+attempt*100));
+    }
+    console.warn("Supabase boot: no persisted session found");
+  }
+
+  sb.auth.onAuthStateChange((event,session)=>{
+    if(event==="INITIAL_SESSION"||event==="SIGNED_IN"){
+      setTimeout(()=>restoreSession(session),0);
+    }
+  });
+
 
   window.doLogin=doLoginReal; window.doRegister=doRegisterReal; window.logout=logoutReal;
   window.openApp=openAppReal; window.openAdmin=openAdminReal; window.saveMyProfile=saveMyProfileReal;
