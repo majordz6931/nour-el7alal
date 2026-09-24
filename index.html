@@ -786,24 +786,52 @@ function switchTab(t){
 }
 function previewPhoto(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{document.getElementById('photo-preview').src=e.target.result;document.getElementById('photo-preview').classList.remove('hidden');document.getElementById('photo-ph').classList.add('hidden');};r.readAsDataURL(f);}
 function previewEditPhoto(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{document.getElementById('edit-photo-prev').src=e.target.result;document.getElementById('edit-photo-prev').classList.remove('hidden');document.getElementById('edit-photo-ph').classList.add('hidden');if(currentUser){currentUser.photo=e.target.result;updateProfilePage();}};r.readAsDataURL(f);}
-function doLogin(ev){ev.preventDefault();
-  const u=document.getElementById('l-user').value.trim();const p=document.getElementById('l-pass').value;
-  if(u.toLowerCase()==='admin'&&p==='koukou911'){currentUser=DB.users[0];openAdmin();return;}
-  const found=DB.users.find(x=>x.username===u&&x.password===p&&x.role!=='admin');
-  if(!found){showToast('❌ اسم المستخدم أو كلمة السر خاطئة');return;}
-  if(found.banned){showToast('🚫 حسابك محظور — تواصل مع الإدارة');return;}
-  currentUser=found;currentUser.online=true;openApp();
+async function __nourDirectAuth(action, body){
+  const SB_URL='https://fnkvlmrzzxptncrqpyyz.supabase.co',SB_KEY='sb_publishable_hwffg3R4YzXTMnDu8-ZMDQ_1NuLnAfY';
+  const r=await fetch(SB_URL+'/functions/v1/username-auth',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY},body:JSON.stringify({action,...body})});
+  const raw=await r.text();let data={};try{data=JSON.parse(raw)}catch(_){}
+  if(!r.ok)throw new Error(data.error||'تعذر تسجيل الدخول');
+  if(data.session&&window.supabase){
+    const client=window.NOUR_SUPABASE||window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+    window.NOUR_SUPABASE=client;
+    const s=await client.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
+    if(s.error)throw s.error;
+  }
+  return data;
 }
-function doRegister(ev){ev.preventDefault();
-  const u=document.getElementById('r-user').value.trim();const p=document.getElementById('r-pass').value;
-  const g=document.getElementById('r-gender').value;const d=document.getElementById('r-dob').value;
-  const w=document.getElementById('r-wilaya').value;const b=document.getElementById('r-bio').value;
-  const ph=document.getElementById('photo-preview').src;
-  if(!w){showToast('⚠️ اختر الولاية');return;}
-  if(DB.users.find(x=>x.username===u)){showToast('❌ اسم المستخدم مستخدم مسبقاً');return;}
-  if(calcAge(d)<18){showToast('⚠️ يجب أن يكون عمرك 18 سنة على الأقل');return;}
-  const newU={id:'u'+Date.now(),username:u,password:p,role:'user',gender:g,dob:d,wilaya:w,bio:b||'لا توجد نبذة',photo:ph.startsWith('data:')?ph:'',online:true,banned:false,joinDate:new Date().toLocaleDateString('ar-DZ'),hearts:0,views:0};
-  DB.users.push(newU);currentUser=newU;openApp();
+async function __nourProfile(id){
+  const SB_URL='https://fnkvlmrzzxptncrqpyyz.supabase.co',SB_KEY='sb_publishable_hwffg3R4YzXTMnDu8-ZMDQ_1NuLnAfY';
+  const client=window.NOUR_SUPABASE||window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+  window.NOUR_SUPABASE=client;
+  const {data,error}=await client.from('profiles').select('*').eq('id',id).single();
+  if(error)throw error; return data;
+}
+function __nourSetCurrent(p){
+  currentUser={id:p.id,username:p.username,role:(p.username||'').toLowerCase()==='admin'?'admin':'user',gender:p.gender==='female'?'أنثى':'ذكر',dob:p.date_of_birth||'',wilaya:p.wilaya||'',bio:p.bio||'لا توجد نبذة',photo:p.avatar_url||'',online:!!p.online,banned:!!p.banned,joinDate:p.created_at?new Date(p.created_at).toLocaleDateString('ar-DZ'):'',hearts:0,views:p.views||0,is_visible:p.is_visible!==false};
+}
+async function doLogin(ev){ev.preventDefault();
+  try{
+    const u=document.getElementById('l-user').value.trim(),p=document.getElementById('l-pass').value;
+    if(!u||!p){showToast('⚠️ أدخل اسم المستخدم وكلمة السر');return;}
+    const data=await __nourDirectAuth('login',{username:u,password:p});
+    const pr=await __nourProfile(data.user.id);
+    if(pr.banned){await window.NOUR_SUPABASE?.auth.signOut();showToast('🚫 حسابك محظور — تواصل مع الإدارة');return;}
+    __nourSetCurrent(pr); if(typeof window.openApp==='function')window.openApp();
+  }catch(e){showToast('❌ '+(e?.message||'تعذر تسجيل الدخول'));console.error('NOUR LOGIN',e);}
+}
+async function doRegister(ev){ev.preventDefault();
+  try{
+    const u=document.getElementById('r-user').value.trim(),p=document.getElementById('r-pass').value;
+    const rawGender=document.getElementById('r-gender').value,g=rawGender==='ذكر'||rawGender==='male'?'male':'female';
+    const d=document.getElementById('r-dob').value,w=document.getElementById('r-wilaya').value,b=document.getElementById('r-bio').value.trim();
+    if(!w){showToast('⚠️ اختر الولاية');return;} if(!u||!p){showToast('⚠️ أدخل اسم المستخدم وكلمة السر');return;}
+    if(p.length<6){showToast('⚠️ كلمة المرور يجب أن تكون 6 أحرف على الأقل');return;}
+    if(calcAge(d)<18){showToast('⚠️ يجب أن يكون عمرك 18 سنة على الأقل');return;}
+    const data=await __nourDirectAuth('signup',{username:u,password:p,date_of_birth:d,wilaya:w,gender:g,seeking:g==='male'?'female':'male'});
+    const pr=await __nourProfile(data.user.id); __nourSetCurrent(pr);
+    if(b){const {error}=await window.NOUR_SUPABASE.from('profiles').update({bio:b}).eq('id',pr.id);if(error)throw error;currentUser.bio=b;}
+    if(typeof window.openApp==='function')window.openApp();
+  }catch(e){showToast('❌ '+(e?.message||'تعذر إنشاء الحساب'));console.error('NOUR REGISTER',e);}
 }
 function calcAge(dob){if(!dob)return 0;const d=new Date(dob),n=new Date();let a=n.getFullYear()-d.getFullYear();if(n.getMonth()-d.getMonth()<0||(n.getMonth()-d.getMonth()===0&&n.getDate()<d.getDate()))a--;return a;}
 function logout(){currentUser=null;currentChatUser=null;['screen-app','screen-admin'].forEach(id=>{const el=document.getElementById(id);el.classList.remove('active');if(id==='screen-app')el.style.display='none';});document.getElementById('screen-auth').style.display='flex';showToast('👋 تم تسجيل الخروج بأمان');}
