@@ -401,25 +401,45 @@
   async function resolveReportReal(id){const {error}=await sb.from("reports").update({status:"resolved"}).eq("id",id);if(error)showToast("❌ "+safeErr(error));else{showToast("✅ تمت المعالجة");renderAdminReportsReal();}}
   function renderAdminChatReal(){renderAdminChat();}
   async function boot(){
-    try{
-      const {data:{session}}=await sb.auth.getSession();
-      if(!session)return;
-      const {data:p,error}=await sb.from("profiles").select("*").eq("id",session.user.id).single();
-      if(error||!p)return;
-      currentUser=mapProfile(p);
-      if(p.banned){await sb.auth.signOut();return;}
-      currentUser.role=session.user.app_metadata?.role==="admin"?"admin":currentUser.role;
-      if(currentUser.role==="admin"){
-        await setupRealtime();
-        openAdmin();
-      }else{
-        // لا ننتظر تحميل كل الرسائل/القلوب/القصص حتى تظهر الواجهة.
-        openApp();
-        Promise.allSettled([loadData(),setPresence(true),setupRealtime()]).then(()=>{
-          renderProfiles();renderConvList();updateProfilePage();renderStoriesReal();updateOnlineCount();
-        });
+    // بعد Refresh قد تحتاج جلسة Supabase لحظات حتى تُسترجع من التخزين المحلي.
+    // لا نعتبر غياب الجلسة/فشل الطلب المؤقت تسجيل خروج.
+    for(let attempt=0;attempt<6;attempt++){
+      try{
+        const {data:{session},error:sessionError}=await sb.auth.getSession();
+        if(sessionError) console.warn("Supabase session:",sessionError);
+        if(!session){
+          await new Promise(r=>setTimeout(r,300));
+          continue;
+        }
+
+        const {data:p,error}=await sb.from("profiles").select("*").eq("id",session.user.id).maybeSingle();
+        if(error||!p){
+          console.warn("Supabase profile boot:",error||"profile not found");
+          await new Promise(r=>setTimeout(r,400));
+          continue;
+        }
+
+        currentUser=mapProfile(p);
+        if(p.banned){await sb.auth.signOut();return;}
+        currentUser.role=session.user.app_metadata?.role==="admin"?"admin":currentUser.role;
+
+        if(currentUser.role==="admin"){
+          await setupRealtime();
+          openAdmin();
+        }else{
+          // لا ننتظر تحميل كل الرسائل/القلوب/القصص حتى تظهر الواجهة.
+          openApp();
+          Promise.allSettled([loadData(),setPresence(true),setupRealtime()]).then(()=>{
+            renderProfiles();renderConvList();updateProfilePage();renderStoriesReal();updateOnlineCount();
+          });
+        }
+        return;
+      }catch(e){
+        console.error("Supabase boot:",e);
+        await new Promise(r=>setTimeout(r,500));
       }
-    }catch(e){console.error("Supabase boot:",e);}
+    }
+    console.warn("Supabase boot: session not restored after retries");
   }
 
   window.doLogin=doLoginReal; window.doRegister=doRegisterReal; window.logout=logoutReal;
