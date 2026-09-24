@@ -140,7 +140,20 @@
       const file=document.getElementById("photo-inp")?.files?.[0]||null;
       if(!w){showToast("⚠️ اختر الولاية");return;}
       if(calcAge(d)<18){showToast("⚠️ يجب أن يكون عمرك 18 سنة على الأقل");return;}
-      const data=await usernameAuth("signup",{username:u,password:p,date_of_birth:d,wilaya:w,gender:g,seeking:g==="male"?"female":"male"});
+      const email = "u_"+Array.from(new TextEncoder().encode(u.toLowerCase()),x=>x.toString(16).padStart(2,"0")).join("")+"@auth.nour-el7alal.local";
+      const {data:authData,error:authError}=await sb.auth.signUp({email,password:p,options:{data:{username:u}}});
+      if(authError) throw authError;
+      if(!authData.user) throw new Error("تعذر إنشاء الحساب");
+      if(!authData.session){
+        const {data:loginData,error:loginError}=await sb.auth.signInWithPassword({email,password:p});
+        if(loginError||!loginData.session) throw loginError||new Error("تعذر فتح جلسة الحساب");
+      }
+      const {error:profileError}=await sb.from("profiles").upsert({
+        id:authData.user.id,username:u.toLowerCase(),date_of_birth:d,wilaya:w,gender:g,seeking:g==="male"?"female":"male",bio:b||"لا توجد نبذة"
+      });
+      if(profileError) throw profileError;
+      const {data:{user:createdUser}}=await sb.auth.getUser();
+      const data={user:createdUser||authData.user};
       currentUser=mapProfile({id:data.user.id,username:u,date_of_birth:d,wilaya:w,gender:g,bio:b,created_at:new Date().toISOString()});
       if(file){
         const path=await uploadFile("avatars",currentUser.id,file,"avatar");
