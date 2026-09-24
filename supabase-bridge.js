@@ -120,6 +120,7 @@ function usernameEmail(username){return "u_"+Array.from(new TextEncoder().encode
       if(pr.banned){await sb.auth.signOut();showToast("🚫 حسابك محظور — تواصل مع الإدارة");return;}
       currentUser=mapProfile(pr);
       currentUser.role=data.user?.app_metadata?.role==="admin" ? "admin" : currentUser.role;
+      saveCurrentUser();
       if(currentUser.role==="admin"){await setupRealtime();openAdmin();}
       else{openApp();Promise.allSettled([loadData(),setPresence(true),setupRealtime()]).then(()=>{renderProfiles();renderConvList();updateProfilePage();renderStoriesReal();updateOnlineCount();});}
     }catch(e){showToast("❌ "+safeErr(e));}
