@@ -16,7 +16,7 @@ const WILAYAS=[
 'قصر البخاري','العريشة'
 ];
 
-let mode='login', currentUser=null, selectedUser=null, messageChannel=null;
+let mode='login', currentUser=null, selectedUser=null, messageChannel=null, selectedBlocked=false;
 const $=id=>document.getElementById(id);
 
 function fillWilayas(select, selected=''){
@@ -136,7 +136,7 @@ $('profileForm').onsubmit=async e=>{
 
 $('search').oninput=()=>loadUsers($('search').value.trim());
 
-$('messageForm').onsubmit=async e=>{
+$('blockBtn').onclick=toggleBlock;\n$('reportBtn').onclick=reportSelected;\n\n$('messageForm').onsubmit=async e=>{
   e.preventDefault();
   if(!selectedUser)return;
   const content=$('messageInput').value.trim();
@@ -225,7 +225,7 @@ async function loadUsers(q=''){
   });
 }
 
-async function loadMessages(){
+async function refreshSafetyActions(){\n  if(!selectedUser)return;\n  const {data,error}=await supabase.from('blocks').select('blocked_id').eq('blocked_id',selectedUser.id).maybeSingle();\n  selectedBlocked=!error&&!!data;\n  $('blockBtn').textContent=selectedBlocked?'🔓 إلغاء الحظر':'🚫 حظر';\n  $('messageInput').disabled=selectedBlocked;\n  $('messageInput').placeholder=selectedBlocked?'الحظر مفعّل — ألغِ الحظر للرسائل':'اكتب رسالة...';\n}\n\nasync function toggleBlock(){\n  if(!selectedUser)return;\n  if(selectedBlocked){\n    const {error}=await supabase.from('blocks').delete().eq('blocker_id',currentUser.id).eq('blocked_id',selectedUser.id);\n    if(error){alert(error.message);return;}\n    selectedBlocked=false;\n  }else{\n    const {error}=await supabase.from('blocks').insert({blocker_id:currentUser.id,blocked_id:selectedUser.id});\n    if(error){alert(error.message);return;}\n    selectedBlocked=true;\n  }\n  await refreshSafetyActions();\n  await loadUsers($('search').value.trim());\n  if(selectedBlocked){$('messages').innerHTML='<p class="muted">تم حظر هذا المستخدم. لن تتمكن من مراسلته.</p>';}else{await loadMessages();}\n}\n\nasync function reportSelected(){\n  if(!selectedUser)return;\n  const reason=prompt('سبب التبليغ؟\\n\\n1 - حساب مزيف\\n2 - إساءة أو تحرش\\n3 - طلب مال أو احتيال\\n4 - محتوى غير مناسب\\n5 - سبب آخر');\n  if(!reason)return;\n  const details=prompt('تفاصيل إضافية (اختياري):')||null;\n  const {error}=await supabase.from('reports').insert({reporter_id:currentUser.id,reported_id:selectedUser.id,reason:reason.slice(0,500),details:details?details.slice(0,2000):null});\n  if(error){alert(error.message);return;}\n  alert('تم إرسال التبليغ للإدارة. شكرًا لمساعدتك في الحفاظ على أمان الموقع.');\n}\n\nasync function loadMessages(){
   if(!selectedUser)return;
   const {data,error}=await supabase.from('messages').select('*')
     .or('and(sender_id.eq.'+currentUser.id+',receiver_id.eq.'+selectedUser.id+'),and(sender_id.eq.'+selectedUser.id+',receiver_id.eq.'+currentUser.id+')')
