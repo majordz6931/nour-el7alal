@@ -65,6 +65,8 @@ $('authForm').onsubmit=async e=>{
   if(mode==='signup'){
     const date_of_birth=$('dateOfBirth').value;
     const wilaya=$('wilaya').value;
+    const gender=$('gender').value;
+    const seeking=$('seeking').value;
     const avatar=$('avatar').files[0];
 
     if(!/^[a-z0-9_.-]{3,24}$/.test(username)){
@@ -73,10 +75,12 @@ $('authForm').onsubmit=async e=>{
     }
     if(!isAdult(date_of_birth)){ $('authMsg').textContent='يجب أن يكون عمرك 18 سنة أو أكثر'; return; }
     if(!wilaya){ $('authMsg').textContent='اختر الولاية'; return; }
+    if(!['male','female'].includes(gender)){ $('authMsg').textContent='اختر الجنس'; return; }
+    if(!['male','female'].includes(seeking)){ $('authMsg').textContent='حدد من تبحث عنه للزواج'; return; }
     if(!avatar){ $('authMsg').textContent='صورة البروفيل مطلوبة'; return; }
     if(!validImage(avatar)){ $('authMsg').textContent='الصورة يجب أن تكون JPG أو PNG أو WEBP وأقل من 5MB'; return; }
 
-    const result=await usernameAuth('signup',{username,password,date_of_birth,wilaya});
+    const result=await usernameAuth('signup',{username,password,date_of_birth,wilaya,gender,seeking});
     if(result.error){ $('authMsg').textContent=result.error; return; }
     const sessionResult=await supabase.auth.setSession(result.session);
     if(sessionResult.error){ $('authMsg').textContent=sessionResult.error.message; return; }
@@ -120,7 +124,10 @@ $('profileForm').onsubmit=async e=>{
     avatar_url=upload.url;
   }
 
-  const data={date_of_birth:dob,wilaya};
+  const gender=$('pGender').value;
+  const seeking=$('pSeeking').value;
+  if(!['male','female'].includes(gender)||!['male','female'].includes(seeking)){ $('profileMsg').textContent='اختر الجنس ومن تبحث عنه'; return; }
+  const data={date_of_birth:dob,wilaya,gender,seeking};
   if(avatar_url)data.avatar_url=avatar_url;
   const {error}=await supabase.from('profiles').update(data).eq('id',currentUser.id);
   $('profileMsg').textContent=error?error.message:'تم حفظ الملف ✓';
@@ -177,19 +184,21 @@ async function init(user){
 
 async function loadProfile(){
   const {data,error}=await supabase.from('profiles')
-    .select('id,username,date_of_birth,wilaya,avatar_url')
+    .select('id,username,date_of_birth,wilaya,gender,seeking,avatar_url')
     .eq('id',currentUser.id).maybeSingle();
   if(error){$('profileMsg').textContent=error.message;return}
   if(!data)return;
   $('pUsername').value=data.username||'';
   $('pDateOfBirth').value=data.date_of_birth||'';
   $('pWilaya').value=data.wilaya||'';
+  $('pGender').value=data.gender||'';
+  $('pSeeking').value=data.seeking||'';
   showImage($('profileAvatarPreview'),data.avatar_url);
 }
 
 async function loadUsers(q=''){
   let query=supabase.from('profiles')
-    .select('id,username,date_of_birth,wilaya,avatar_url,created_at')
+    .select('id,username,date_of_birth,wilaya,gender,seeking,avatar_url,created_at')
     .neq('id',currentUser.id)
     .order('created_at',{ascending:false})
     .limit(50);
