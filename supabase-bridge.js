@@ -110,7 +110,7 @@
     ev.preventDefault();
     try{
       const u=document.getElementById("r-user").value.trim(), p=document.getElementById("r-pass").value;
-      const g=document.getElementById("r-gender").value, d=document.getElementById("r-dob").value;
+      const rawGender=document.getElementById("r-gender").value; const g=rawGender==="ذكر"||rawGender==="male"?"male":"female"; const d=document.getElementById("r-dob").value;
       const w=document.getElementById("r-wilaya").value, b=document.getElementById("r-bio").value.trim();
       const file=document.getElementById("photo-inp")?.files?.[0]||null;
       if(!w){showToast("⚠️ اختر الولاية");return;}
