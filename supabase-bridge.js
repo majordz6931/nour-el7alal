@@ -102,6 +102,7 @@
       if(error) throw error;
       if(pr.banned){await sb.auth.signOut();showToast("🚫 حسابك محظور — تواصل مع الإدارة");return;}
       currentUser=mapProfile(pr);
+      await setupRealtime();
       if(currentUser.role==="admin") openAdmin(); else {await loadData();await setPresence(true);openApp();}
     }catch(e){showToast("❌ "+safeErr(e));}
   }
@@ -123,13 +124,14 @@
         await sb.from("profiles").update({avatar_url:pub.publicUrl,bio:b||"لا توجد نبذة"}).eq("id",currentUser.id);
         currentUser.photo=pub.publicUrl; currentUser.bio=b||"لا توجد نبذة";
       }else if(b){await sb.from("profiles").update({bio:b}).eq("id",currentUser.id);}
-      await loadData(); await setPresence(true); openApp();
+      await loadData(); await setPresence(true); await setupRealtime(); openApp();
     }catch(e){showToast("❌ "+safeErr(e));}
   }
 
   async function logoutReal(){
     try{await setPresence(false);await sb.auth.signOut();}catch(_){}
     currentUser=null;currentChatUser=null;
+    if(realtimeChannel){try{await sb.removeChannel(realtimeChannel);}catch(_){} realtimeChannel=null;}
     document.getElementById("screen-app").classList.remove("active");
     document.getElementById("screen-admin").classList.remove("active");
     document.getElementById("screen-app").style.display="none";
@@ -345,7 +347,7 @@
       if(error||!p)return;
       currentUser=mapProfile(p);
       if(p.banned){await sb.auth.signOut();return;}
-      await loadData();await setPresence(true);
+      await loadData();await setPresence(true);await setupRealtime();
       currentUser.role=session.user.app_metadata?.role==="admin"?"admin":currentUser.role;
       if(currentUser.role==="admin")openAdmin();else openApp();
     }catch(e){console.error("Supabase boot:",e);}
@@ -361,12 +363,32 @@
   window.sendAnnounce=sendAnnounceReal; window.renderAdminReports=renderAdminReportsReal; window.resolveReport=resolveReportReal;
   window.renderAdminCreds=renderAdminCredsSafe;
 
-  sb.channel("nour-realtime")
-    .on("postgres_changes",{event:"*",schema:"public",table:"messages"},async()=>{if(currentUser){await loadData();if(currentChatUser)renderChatMsgs();renderConvList();}})
-    .on("postgres_changes",{event:"*",schema:"public",table:"likes"},async()=>{if(currentUser){await loadData();renderProfiles();updateStats();}})
-    .on("postgres_changes",{event:"*",schema:"public",table:"reactions"},async()=>{if(currentUser){await loadData();if(currentChatUser)renderChatMsgs();}})
-    .on("postgres_changes",{event:"*",schema:"public",table:"profiles"},async()=>{if(currentUser){await loadData();renderProfiles();updateOnlineCount();}})
-    .subscribe();
+  let realtimeChannel=null;
+  async function setupRealtime(){
+    if(realtimeChannel){
+      try{await sb.removeChannel(realtimeChannel);}catch(_){}
+      realtimeChannel=null;
+    }
+    if(!currentUser?.id)return;
+    realtimeChannel=sb.channel("nour-realtime-"+currentUser.id)
+      .on("postgres_changes",{event:"*",schema:"public",table:"messages"},async()=>{
+        if(!currentUser)return;
+        await loadData();
+        if(currentChatUser){renderChatMsgs();renderConvList();}
+      })
+      .on("postgres_changes",{event:"*",schema:"public",table:"likes"},async()=>{
+        if(currentUser){await loadData();renderProfiles();updateStats();}
+      })
+      .on("postgres_changes",{event:"*",schema:"public",table:"reactions"},async()=>{
+        if(currentUser){await loadData();if(currentChatUser)renderChatMsgs();}
+      })
+      .on("postgres_changes",{event:"*",schema:"public",table:"profiles"},async()=>{
+        if(currentUser){await loadData();renderProfiles();updateOnlineCount();}
+      })
+      .subscribe((status,error)=>{
+        if(status==="CHANNEL_ERROR")console.error("Realtime chat:",error);
+      });
+  }
 
   setInterval(()=>{if(currentUser&&!role())setPresence(true);},20000);
   boot();
