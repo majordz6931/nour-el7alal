@@ -173,11 +173,13 @@ async function sendVoiceMessage(blob){
 }
 async function sendChatImage(file){
  const recipientId=state.selectedUser?.id;if(!recipientId||!file)return;
+ if(!/^image\\/(jpeg|png|webp|gif)$/i.test(file.type)){msg("اختر صورة JPG أو PNG أو WEBP أو GIF.");return}
  if(file.size>10*1024*1024){msg("حجم الصورة يجب أن يكون أقل من 10 ميغابايت.");return}
  try{
-  const blob=await compressImage(file);
-  const path=state.user.id+"/image-"+Date.now()+".jpg";
-  const {error:up}=await supabaseClient.storage.from("chat-images").upload(path,blob,{contentType:"image/jpeg",cacheControl:"3600",upsert:false});
+  // أرسل الصورة الأصلية بدون Canvas/ضغط حتى لا تتغير الدقة أو الجودة.
+  const ext=file.type==="image/png"?"png":file.type==="image/webp"?"webp":file.type==="image/gif"?"gif":"jpg";
+  const path=state.user.id+"/image-"+Date.now()+"."+ext;
+  const {error:up}=await supabaseClient.storage.from("chat-images").upload(path,file,{contentType:file.type,cacheControl:"3600",upsert:false});
   if(up){console.error(up);msg("تعذر رفع الصورة: "+up.message);return}
   const {data:url}=supabaseClient.storage.from("chat-images").getPublicUrl(path);
   const {error}=await supabaseClient.from("messages").insert({sender_id:state.user.id,recipient_id:recipientId,body:"",attachment_url:url.publicUrl,attachment_name:path});
