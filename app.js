@@ -233,8 +233,48 @@ async function showSection(section){
   };
   return
  }
- if(section==="discover"){panel.innerHTML='<div class="panel-head"><h3>البحث عن عضو</h3><button id="closePanel">×</button></div><div class="filter-grid"><input id="filterQ" placeholder="اسم المستخدم..."><select id="filterWilaya"><option value="">كل الولايات</option>'+wilayas.map(w=>'<option>'+escapeHtml(w)+'</option>').join("")+'</select><input id="filterMin" type="number" min="18" max="100" placeholder="العمر من"><input id="filterMax" type="number" min="18" max="100" placeholder="العمر إلى"></div><div id="discoverResults" class="discover-grid"></div>';$("#closePanel").onclick=()=>panel.hidden=true;const run=()=>{const q=($("#filterQ").value||"").toLowerCase(),w=$("#filterWilaya").value,min=Number($("#filterMin").value)||0,max=Number($("#filterMax").value)||100;const list=state.profiles.filter(p=>(!q||p.username.toLowerCase().includes(q))&&(!w||p.wilaya===w)&&(!p.age||p.age>=min&&p.age<=max));$("#discoverResults").innerHTML=list.map(p=>'<article class="discover-card" data-profile-id="'+p.id+'"><div class="discover-avatar">'+(p.avatar_url?'<img src="'+escapeHtml(p.avatar_url)+'" alt="">':escapeHtml((p.username||"ن")[0]))+'</div><b>'+escapeHtml(p.username)+'</b><small>'+escapeHtml((p.age||"")+" سنة • "+(p.wilaya||"الجزائر"))+'</small><div><button class="mini-action like-btn" data-id="'+p.id+'">❤️ إعجاب</button><button class="mini-action request-btn" data-id="'+p.id+'">💍 طلب تعارف</button></div></article>').join("");document.querySelectorAll(".discover-card").forEach(card=>card.onclick=e=>{if(!e.target.closest("button"))openProfile(card.dataset.profileId)});document.querySelectorAll(".like-btn").forEach(b=>b.onclick=()=>likeProfile(b.dataset.id));document.querySelectorAll(".request-btn").forEach(b=>b.onclick=()=>sendRequest(b.dataset.id));};["filterQ","filterWilaya","filterMin","filterMax"].forEach(id=>$("#"+id).oninput=run);run();return}
- if(section==="requests"){const {data,error}=await supabaseClient.from("marriage_requests").select("id,sender_id,recipient_id,status,created_at").or("sender_id.eq."+state.user.id+",recipient_id.eq."+state.user.id).order("created_at",{ascending:false});if(error)return panel.innerHTML='<p>'+escapeHtml(error.message)+'</p>';const ids=[...new Set((data||[]).map(x=>x.sender_id===state.user.id?x.recipient_id:x.sender_id))];const people=state.profiles.filter(p=>ids.includes(p.id));panel.innerHTML='<div class="panel-head"><h3>طلبات التعارف</h3><button id="closePanel">×</button></div>'+(data||[]).map(r=>{const p=people.find(x=>x.id===(r.sender_id===state.user.id?r.recipient_id:r.sender_id));return '<div class="request-row"><span>'+escapeHtml(p?.username||"عضو")+'</span><b>'+escapeHtml(r.status)+'</b>'+(r.recipient_id===state.user.id&&r.status==="pending"?'<button class="mini-action accept-btn" data-id="'+r.id+'">قبول</button><button class="mini-action reject-btn" data-id="'+r.id+'">رفض</button>':"")+'</div>'}).join("");$("#closePanel").onclick=()=>panel.hidden=true;document.querySelectorAll(".accept-btn").forEach(b=>b.onclick=()=>updateRequest(b.dataset.id,"accepted"));document.querySelectorAll(".reject-btn").forEach(b=>b.onclick=()=>updateRequest(b.dataset.id,"rejected"));return}
+ if(section==="discover"){
+ panel.innerHTML='<div class="panel-head"><h3>البحث المتقدم 🔎</h3><button id="closePanel">×</button></div>'+
+ '<div class="advanced-search">'+
+ '<div class="search-title">ابحث عن الشخص المناسب</div>'+
+ '<div class="filter-grid advanced-filter-grid">'+
+ '<label>اسم المستخدم<input id="filterQ" placeholder="مثال: Zineb23"></label>'+
+ '<label>الولاية<select id="filterWilaya"><option value="">كل الولايات</option>'+wilayas.map(w=>'<option>'+escapeHtml(w)+'</option>').join("")+'</select></label>'+
+ '<label>العمر من<input id="filterMin" type="number" min="18" max="100" placeholder="18"></label>'+
+ '<label>العمر إلى<input id="filterMax" type="number" min="18" max="100" placeholder="100"></label>'+
+ '<label>الحالة الاجتماعية<select id="filterStatus"><option value="">كل الحالات</option><option>أعزب/عزباء</option><option>مطلق/مطلقة</option><option>أرمل/أرملة</option></select></label>'+
+ '<label>المهنة<input id="filterProfession" placeholder="مثال: مهندس"></label>'+
+ '</div>'+
+ '<label class="online-filter"><input id="filterOnline" type="checkbox"> 🟢 المتصلون الآن فقط</label>'+
+ '<div class="search-result-count" id="discoverCount"></div>'+
+ '</div><div id="discoverResults" class="discover-grid"></div>';
+ $("#closePanel").onclick=()=>panel.hidden=true;
+ const isOnline=p=>Boolean(p.is_online&&p.last_seen&&(Date.now()-new Date(p.last_seen).getTime()<=10000));
+ const run=()=>{
+  const q=($("#filterQ").value||"").trim().toLowerCase(),w=$("#filterWilaya").value;
+  const min=Number($("#filterMin").value)||18,max=Number($("#filterMax").value)||100,status=$("#filterStatus").value;
+  const prof=($("#filterProfession").value||"").trim().toLowerCase(),online=$("#filterOnline").checked;
+  const list=state.profiles.filter(p=>
+   (!q||String(p.username||"").toLowerCase().includes(q))&&
+   (!w||p.wilaya===w)&&
+   (p.age&&p.age>=min&&p.age<=max)&&
+   (!status||p.marital_status===status)&&
+   (!prof||String(p.profession||"").toLowerCase().includes(prof))&&
+   (!online||isOnline(p))
+  );
+  $("#discoverCount").textContent=list.length+" عضو مطابق للبحث";
+  $("#discoverResults").innerHTML=list.length?list.map(p=>{
+   const onlineNow=isOnline(p);
+   return '<article class="discover-card" data-profile-id="'+p.id+'"><div class="discover-avatar">'+(p.avatar_url?'<img src="'+escapeHtml(p.avatar_url)+'" alt="">':escapeHtml((p.username||"ن")[0]))+'</div><b>'+escapeHtml(p.username)+(onlineNow?' <span class="online-dot">●</span>':'')+'</b><small>'+escapeHtml((p.age||"")+" سنة • "+(p.wilaya||"الجزائر"))+'</small><small>'+escapeHtml(p.marital_status||"الحالة غير محددة")+(p.profession?" • "+escapeHtml(p.profession):"")+'</small><div><button class="mini-action like-btn" data-id="'+p.id+'">❤️ إعجاب</button><button class="mini-action request-btn" data-id="'+p.id+'">💍 طلب تعارف</button></div></article>'
+  }).join(""):'<div class="empty-search">لا توجد نتائج مطابقة 🔎<br><small>جرّب توسيع العمر أو إزالة أحد الفلاتر.</small></div>';
+  document.querySelectorAll(".discover-card").forEach(card=>card.onclick=e=>{if(!e.target.closest("button"))openProfile(card.dataset.profileId)});
+  document.querySelectorAll(".like-btn").forEach(b=>b.onclick=()=>likeProfile(b.dataset.id));
+  document.querySelectorAll(".request-btn").forEach(b=>b.onclick=()=>sendRequest(b.dataset.id));
+ };
+ ["filterQ","filterWilaya","filterMin","filterMax","filterStatus","filterProfession"].forEach(id=>$("#"+id).oninput=run);
+ $("#filterOnline").onchange=run;
+ run();return}
+if(section==="requests"){const {data,error}=await supabaseClient.from("marriage_requests").select("id,sender_id,recipient_id,status,created_at").or("sender_id.eq."+state.user.id+",recipient_id.eq."+state.user.id).order("created_at",{ascending:false});if(error)return panel.innerHTML='<p>'+escapeHtml(error.message)+'</p>';const ids=[...new Set((data||[]).map(x=>x.sender_id===state.user.id?x.recipient_id:x.sender_id))];const people=state.profiles.filter(p=>ids.includes(p.id));panel.innerHTML='<div class="panel-head"><h3>طلبات التعارف</h3><button id="closePanel">×</button></div>'+(data||[]).map(r=>{const p=people.find(x=>x.id===(r.sender_id===state.user.id?r.recipient_id:r.sender_id));return '<div class="request-row"><span>'+escapeHtml(p?.username||"عضو")+'</span><b>'+escapeHtml(r.status)+'</b>'+(r.recipient_id===state.user.id&&r.status==="pending"?'<button class="mini-action accept-btn" data-id="'+r.id+'">قبول</button><button class="mini-action reject-btn" data-id="'+r.id+'">رفض</button>':"")+'</div>'}).join("");$("#closePanel").onclick=()=>panel.hidden=true;document.querySelectorAll(".accept-btn").forEach(b=>b.onclick=()=>updateRequest(b.dataset.id,"accepted"));document.querySelectorAll(".reject-btn").forEach(b=>b.onclick=()=>updateRequest(b.dataset.id,"rejected"));return}
  if(section==="offers"){const {data,error}=await supabaseClient.from("marriage_offers").select("id,owner_id,name,age,wilaya,gender,offer_type,bio,avatar_emoji,verified,online").eq("status","active").order("created_at",{ascending:false}).limit(30);if(error)return panel.innerHTML='<p>'+escapeHtml(error.message)+'</p>';panel.innerHTML='<div class="panel-head"><h3>عروض الزواج 💍</h3><button id="closePanel">×</button></div><div class="discover-grid">'+(data||[]).map(o=>'<article class="discover-card"><div class="discover-avatar">'+escapeHtml(o.avatar_emoji||"💍")+'</div><b>'+escapeHtml(o.name||"عضو")+'</b><small>'+escapeHtml((o.age||"")+" سنة • "+(o.wilaya||"الجزائر"))+'</small><p>'+escapeHtml(o.bio||"عرض زواج جاد")+'</p><button class="mini-action offer-request" data-id="'+o.owner_id+'">💍 تواصل</button></article>').join("")+'</div>';$("#closePanel").onclick=()=>panel.hidden=true;document.querySelectorAll(".offer-request").forEach(b=>b.onclick=()=>sendRequest(b.dataset.id));}
 }
 async function likeProfile(id){const {error}=await supabaseClient.from("profile_likes").upsert({user_id:state.user.id,target_id:id},{onConflict:"user_id,target_id"});if(error)alert(error.message);else alert("تم تسجيل الإعجاب ❤️")}
