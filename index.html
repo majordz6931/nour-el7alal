@@ -9,15 +9,16 @@
 <body>
 <header class="topbar">
   <div class="brand">🌙 نور الحلال</div>
-  <button id="logoutBtn" class="ghost hidden">خروج</button>
+  <button id="logoutBtn" class="ghost hidden" type="button">خروج</button>
 </header>
+
 <main>
 <section id="authView" class="card auth">
   <h1>نور الحلال</h1>
   <p class="muted">تعارف جاد باحترام وخصوصية</p>
   <div class="tabs">
-    <button class="tab active" data-tab="login">دخول</button>
-    <button class="tab" data-tab="signup">حساب جديد</button>
+    <button class="tab active" data-tab="login" type="button">دخول</button>
+    <button class="tab" data-tab="signup" type="button">حساب جديد</button>
   </div>
   <form id="authForm">
     <input id="username" placeholder="اسم المستخدم" minlength="3" maxlength="24" autocomplete="username" required>
@@ -48,46 +49,49 @@
   <p id="authMsg" class="msg"></p>
 </section>
 
-<section id="appView" class="hidden">
-  <div class="grid">
-    <div class="card">
-      <h2>ملفي الشخصي</h2>
-      <form id="profileForm">
-        <div class="profile-photo-wrap"><img id="profileAvatarPreview" class="profile-photo hidden" alt="صورة البروفيل"></div>
-        <input id="pUsername" placeholder="اسم المستخدم" readonly>
-        <label class="field-label">تاريخ الميلاد</label>
-        <input id="pDateOfBirth" type="date" required>
-        <label class="field-label">الولاية</label>
-        <select id="pWilaya" required></select>
-        <label class="field-label">الجنس</label>
-        <select id="pGender" required>
-          <option value="male">ذكر</option>
-          <option value="female">أنثى</option>
-        </select>
-        <label class="field-label">أبحث عن</label>
-        <select id="pSeeking" required>
-          <option value="male">رجل</option>
-          <option value="female">امرأة</option>
-        </select>
-        <label class="field-label">تغيير صورة البروفيل</label>
-        <input id="pAvatar" type="file" accept="image/jpeg,image/png,image/webp">
-        <button class="primary">حفظ الملف</button>
+<section id="appView" class="hidden chat-app">
+  <div class="chat-layout">
+    <aside class="online-panel card">
+      <div class="online-head">
+        <div>
+          <h2>الأشخاص المتصلون</h2>
+          <span id="onlineCount" class="online-count">0 متصل</span>
+        </div>
+        <span class="live-dot" title="متصل"></span>
+      </div>
+      <div id="onlineUsers" class="online-users">
+        <p class="muted empty-online">جاري تحميل المتصلين...</p>
+      </div>
+    </aside>
+
+    <section class="chat card">
+      <div class="chat-head">
+        <div class="chat-person">
+          <div id="chatAvatar" class="chat-avatar placeholder">👤</div>
+          <div>
+            <h2 id="chatTitle">اختر شخصًا</h2>
+            <p id="chatStatus" class="muted">اختر شخصًا من المتصلين لبدء الدردشة</p>
+          </div>
+        </div>
+        <div id="safetyActions" class="safety-actions hidden">
+          <button id="blockBtn" class="danger-outline" type="button">🚫 حظر</button>
+          <button id="reportBtn" class="warn-outline" type="button">⚠️ تبليغ</button>
+        </div>
+      </div>
+
+      <div id="messages" class="messages">
+        <div class="empty-chat">
+          <div class="empty-icon">💬</div>
+          <h3>ابدأ محادثة</h3>
+          <p class="muted">اختر شخصًا متصلًا من القائمة</p>
+        </div>
+      </div>
+
+      <form id="messageForm" class="message-form">
+        <input id="messageInput" placeholder="اكتب رسالة..." maxlength="5000" autocomplete="off" disabled>
+        <button class="primary" type="submit" disabled id="sendBtn">إرسال</button>
       </form>
-      <p id="profileMsg" class="msg"></p>
-    </div>
-    <div class="card">
-      <h2>المستخدمون</h2>
-      <input id="search" placeholder="ابحث باسم المستخدم أو الولاية">
-      <div id="users" class="users"></div>
-    </div>
-  </div>
-  <div class="card chat">
-    <div class="chat-head"><h2 id="chatTitle">المحادثة</h2><div id="safetyActions" class="safety-actions hidden"><button id="blockBtn" class="danger-outline" type="button">🚫 حظر</button><button id="reportBtn" class="warn-outline" type="button">⚠️ تبليغ</button></div></div>
-    <div id="messages" class="messages"></div>
-    <form id="messageForm">
-      <input id="messageInput" placeholder="اكتب رسالة..." maxlength="5000" required>
-      <button class="primary">إرسال</button>
-    </form>
+    </section>
   </div>
 </section>
 </main>
