@@ -32,7 +32,8 @@
 
   async function loadData() {
     if (!currentUser) return;
-    await cleanupExpiredStories();
+    // لا ننتظر تنظيف القصص المنتهية أثناء الدخول؛ هذا طلب إضافي لا يجب أن يوقف فتح الموقع.
+    cleanupExpiredStories().catch(()=>{});
     const [{data:ps,error:pe},{data:ls,error:le},{data:ms,error:me},{data:rs,error:re},{data:stories,error:se},{data:anns,error:ae}] = await Promise.all([
       sb.from("profiles").select("*").eq("is_visible",true),
       sb.from("likes").select("liker_id,liked_id"),
@@ -116,8 +117,17 @@
       if(error) throw error;
       if(pr.banned){await sb.auth.signOut();showToast("🚫 حسابك محظور — تواصل مع الإدارة");return;}
       currentUser=mapProfile(pr);
-      await setupRealtime();
-      if(currentUser.role==="admin") openAdmin(); else {await loadData();await setPresence(true);openApp();}
+      currentUser.role=data.user?.app_metadata?.role==="admin" ? "admin" : currentUser.role;
+      if(currentUser.role==="admin"){
+        await setupRealtime();
+        openAdmin();
+      }else{
+        // افتح الواجهة فوراً بعد التحقق من الحساب، وحمّل البيانات في الخلفية.
+        openApp();
+        Promise.allSettled([loadData(),setPresence(true),setupRealtime()]).then(()=>{
+          renderProfiles();renderConvList();updateProfilePage();renderStoriesReal();updateOnlineCount();
+        });
+      }
     }catch(e){showToast("❌ "+safeErr(e));}
   }
 
@@ -138,7 +148,10 @@
         await sb.from("profiles").update({avatar_url:pub.publicUrl,bio:b||"لا توجد نبذة"}).eq("id",currentUser.id);
         currentUser.photo=pub.publicUrl; currentUser.bio=b||"لا توجد نبذة";
       }else if(b){await sb.from("profiles").update({bio:b}).eq("id",currentUser.id);}
-      await loadData(); await setPresence(true); await setupRealtime(); openApp();
+      openApp();
+      Promise.allSettled([loadData(),setPresence(true),setupRealtime()]).then(()=>{
+        renderProfiles();renderConvList();updateProfilePage();renderStoriesReal();updateOnlineCount();
+      });
     }catch(e){showToast("❌ "+safeErr(e));}
   }
 
@@ -395,9 +408,17 @@
       if(error||!p)return;
       currentUser=mapProfile(p);
       if(p.banned){await sb.auth.signOut();return;}
-      await loadData();await setPresence(true);await setupRealtime();
       currentUser.role=session.user.app_metadata?.role==="admin"?"admin":currentUser.role;
-      if(currentUser.role==="admin")openAdmin();else openApp();
+      if(currentUser.role==="admin"){
+        await setupRealtime();
+        openAdmin();
+      }else{
+        // لا ننتظر تحميل كل الرسائل/القلوب/القصص حتى تظهر الواجهة.
+        openApp();
+        Promise.allSettled([loadData(),setPresence(true),setupRealtime()]).then(()=>{
+          renderProfiles();renderConvList();updateProfilePage();renderStoriesReal();updateOnlineCount();
+        });
+      }
     }catch(e){console.error("Supabase boot:",e);}
   }
 
