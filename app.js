@@ -106,7 +106,7 @@ function showChatProfile(id){
   const p=state.profiles.find(x=>String(x.id)===String(id));
   if(!p)return;
   closeCommunityPanel();
-  showProfile(id);
+  openProfile(id);
 }
 function showModerationChoice(id,name){
   return new Promise(resolve=>{
