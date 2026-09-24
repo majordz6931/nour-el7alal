@@ -23,8 +23,16 @@
   const keyOf=(a,b)=>[a,b].sort().join("_");
   function timeOf(d){const n=new Date(d);return n.toLocaleTimeString("ar-DZ",{hour:"2-digit",minute:"2-digit",hour12:false});}
 
+  async function cleanupExpiredStories(){
+    if(!currentUser?.id) return;
+    try{
+      await sb.from("stories").delete().eq("user_id",currentUser.id).lt("expires_at",new Date().toISOString());
+    }catch(e){console.error("Story cleanup:",e);}
+  }
+
   async function loadData() {
     if (!currentUser) return;
+    await cleanupExpiredStories();
     const [{data:ps,error:pe},{data:ls,error:le},{data:ms,error:me},{data:rs,error:re},{data:stories,error:se},{data:anns,error:ae}] = await Promise.all([
       sb.from("profiles").select("*").eq("is_visible",true),
       sb.from("likes").select("liker_id,liked_id"),
@@ -263,6 +271,32 @@
     }catch(e){showToast("❌ "+safeErr(e));}
   }
 
+  async function addStoryReal(ev){
+    const file=ev?.target?.files?.[0];
+    if(!file||!currentUser||role()) return;
+    try{
+      if(file.size>25*1024*1024) throw new Error("القصة أكبر من 25MB");
+      if(!file.type.startsWith("image/")&&!file.type.startsWith("video/")) throw new Error("اختر صورة أو فيديو");
+      await cleanupExpiredStories();
+      const caption=(prompt("اكتب وصف القصة (اختياري):")||"").trim();
+      const path=await uploadFile("stories",currentUser.id,file,"story");
+      const expires=new Date(Date.now()+24*60*60*1000).toISOString();
+      const {error}=await sb.from("stories").insert({user_id:currentUser.id,media_url:path,caption,expires_at:expires});
+      if(error){await sb.storage.from("stories").remove([path]);throw error;}
+      ev.target.value="";
+      await loadData();
+      renderStoriesReal();
+      showToast("📸 تم نشر قصتك — ستختفي بعد 24 ساعة");
+      setTimeout(async()=>{
+        try{
+          await sb.from("stories").delete().eq("user_id",currentUser.id).eq("media_url",path);
+          await sb.storage.from("stories").remove([path]);
+          await loadData();renderStoriesReal();
+        }catch(e){console.error("Story expiry:",e);}
+      },24*60*60*1000+3000);
+    }catch(e){showToast("❌ "+safeErr(e));if(ev?.target)ev.target.value="";}
+  }
+
   function renderStoriesReal(){
     const wrap=document.getElementById("stories-wrap");if(!wrap)return;wrap.innerHTML="";
     const add=document.createElement("div");add.className="story-item";
@@ -272,7 +306,7 @@
       const u=DB.users.find(x=>x.id===s.user_id);if(!u)return;
       const item=document.createElement("div");item.className="story-item";
       item.innerHTML='<div class="story-ring"><div class="story-inner">'+(u.photo?'<img src="'+u.photo+'">':(u.gender==="أنثى"?"👩":"👨"))+'</div></div><div class="story-name">'+u.username+'</div>';
-      item.onclick=()=>openStory({emoji:"🌿",caption:s.caption||"",bg:"linear-gradient(135deg,#0a2a0a,#1a4a1a)"},u);
+      item.onclick=()=>openStory({media_url:s.media_url,caption:s.caption||"",created_at:s.created_at,emoji:"🌿",bg:"linear-gradient(135deg,#0a2a0a,#1a4a1a)"},u);
       wrap.appendChild(item);
     });
   }
@@ -358,7 +392,7 @@
   window.toggleHeart=toggleHeartReal; window.heartFromModal=heartFromModalReal; window.submitReport=submitReportReal;
   window.openChat=openChatReal; window.sendMsg=sendMsgReal; window.sendImage=sendImageReal;
   window.toggleRec=toggleRecReal; window.stopRec=stopRecReal; window.cancelRec=cancelRecReal; window.cleanupRec=cleanupRecReal;
-  window.addReaction=addReactionReal; window.renderStories=renderStoriesReal;
+  window.addReaction=addReactionReal; window.renderStories=renderStoriesReal; window.addStory=addStoryReal;
   window.adminTab=adminTabReal; window.banUser=banUserReal; window.unbanUser=unbanUserReal; window.deleteUser=deleteUserReal;
   window.sendAnnounce=sendAnnounceReal; window.renderAdminReports=renderAdminReportsReal; window.resolveReport=resolveReportReal;
   window.renderAdminCreds=renderAdminCredsSafe;
