@@ -81,6 +81,11 @@
 .welcome-chat{margin:0 auto!important;position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;pointer-events:none}.welcome-icon{width:72px;height:72px;font-size:32px}
 @media(max-width:700px){.chat{border-radius:0!important}.chat-app{grid-template-columns:1fr!important;min-height:calc(100vh - 64px)}.chat-sidebar{max-height:180px!important}.sidebar-title{height:52px}.online-title{padding:7px 12px!important}#users{height:105px;display:flex;overflow-x:auto;overflow-y:hidden}.user{min-width:230px!important;height:100px;min-height:100px!important;border-left:1px solid #202b31!important;display:flex}.user span:nth-child(2){min-width:0}.room{min-height:calc(100vh - 244px)}.messages{padding:16px 10px!important}.bubble{max-width:82%!important}.send-btn{min-width:62px!important}.quick-replies{overflow-x:auto}}
 
+/* Fix welcome message overlaying the composer */
+.room .messages{position:relative!important}
+.room .messages .welcome-chat{position:absolute!important;inset:0!important;width:100%!important;max-width:360px!important;height:100%!important;margin:0 auto!important;padding:20px!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important}
+.room .send,.room .quick-replies{position:relative!important;z-index:3!important}
+
 /* Emoji picker */
 .emoji-picker{position:absolute;right:12px;bottom:72px;width:min(360px,calc(100% - 24px));max-height:320px;z-index:20;background:#202c33;border:1px solid #34444d;border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.4);overflow:hidden}.emoji-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #34444d;color:#dce7eb}.emoji-head button{background:transparent;border:0;color:#b7c4ca;font-size:20px}.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;padding:9px;max-height:260px;overflow:auto}.emoji-grid button{border:0;background:transparent;font-size:23px;padding:6px;border-radius:8px;cursor:pointer}.emoji-grid button:hover{background:#2b3a42}@media(max-width:700px){.emoji-picker{bottom:65px;width:calc(100% - 16px);right:8px}.emoji-grid{grid-template-columns:repeat(7,1fr)}}
 
