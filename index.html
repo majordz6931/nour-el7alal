@@ -476,7 +476,7 @@ label{font-size:.8rem;color:var(--muted);margin-bottom:.3rem;display:block}
   <div class="page active" id="page-discover">
     <div class="page-hdr"><h2>🔍 اكتشف <span class="grad">أعضاء</span></h2><p>تعرف على أشخاص من ولايات الجزائر</p></div>
     <!-- STORIES -->
-    <div class="stories-wrap" id="stories-wrap"></div>
+    <div class="stories-wrap" id="stories-wrap"></div><input type="file" id="story-file-inp" accept="image/*,video/*" class="hidden" onchange="addStory(event)"/>
     <!-- FILTERS -->
     <div class="chips-row">
       <div class="chip active" onclick="filterD(this,'all')">الكل 🌍</div>
@@ -851,7 +851,7 @@ function renderStories(){
   // Add story button
   const addItem=document.createElement('div');addItem.className='story-item';
   addItem.innerHTML=`<div class="story-ring story-add-ring"><div class="story-inner story-add-inner"><span style="font-size:1.5rem">➕</span></div></div><div class="story-name">قصتي</div>`;
-  addItem.onclick=()=>showToast('📸 ميزة القصص قادمة قريباً!');
+  addItem.onclick=()=>document.getElementById("story-file-inp")?.click();
   wrap.appendChild(addItem);
   STORIES.forEach(s=>{
     const u=DB.users.find(x=>x.id===s.uid);if(!u||u.banned)return;
