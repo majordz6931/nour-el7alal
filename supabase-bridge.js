@@ -43,6 +43,12 @@
     ]);
     if(pe) throw pe;
     DB.users=(ps||[]).map(p=>mapProfile(p));
+    const me=(ps||[]).find(p=>p.id===currentUser.id);
+    if(me){
+      const savedRole=currentUser.role;
+      currentUser=mapProfile(me);
+      if(savedRole==="admin") currentUser.role="admin";
+    }
     const countMap={}; (ls||[]).forEach(x=>{countMap[x.liked_id]=(countMap[x.liked_id]||0)+1;});
     DB.users.forEach(u=>u.hearts=countMap[u.id]||0);
     DB.likes={}; (ls||[]).forEach(x=>{if(!DB.likes[x.liker_id])DB.likes[x.liker_id]=new Set();DB.likes[x.liker_id].add(x.liked_id);});
@@ -165,12 +171,19 @@
   }
 
   async function toggleHeartReal(ev,uid){
-    ev.stopPropagation(); if(!currentUser||role()) return;
+    ev?.stopPropagation?.(); if(!currentUser||role()||uid===currentUser.id) return;
     const liked=(DB.likes[currentUser.id]||new Set()).has(uid);
     try{
-      if(liked) await sb.from("likes").delete().eq("liker_id",currentUser.id).eq("liked_id",uid);
-      else await sb.from("likes").insert({liker_id:currentUser.id,liked_id:uid});
-      await loadData();renderProfiles();updateStats();showToast(liked?"💔 تم إلغاء القلب":"❤️ تم إرسال القلب");
+      let error;
+      if(liked){
+        ({error}=await sb.from("likes").delete().eq("liker_id",currentUser.id).eq("liked_id",uid));
+      }else{
+        ({error}=await sb.from("likes").insert({liker_id:currentUser.id,liked_id:uid}));
+      }
+      if(error) throw error;
+      await loadData();
+      renderProfiles();updateStats();
+      showToast(liked?"💔 تم إلغاء القلب":"❤️ تم إرسال القلب");
     }catch(e){showToast("❌ "+safeErr(e));}
   }
 
@@ -301,6 +314,7 @@
     const wrap=document.getElementById("stories-wrap");if(!wrap)return;wrap.innerHTML="";
     const add=document.createElement("div");add.className="story-item";
     add.innerHTML='<div class="story-ring story-add-ring"><div class="story-inner story-add-inner"><span style="font-size:1.5rem">➕</span></div></div><div class="story-name">قصتي</div>';
+    add.onclick=()=>document.getElementById("story-file-inp")?.click();
     wrap.appendChild(add);
     (window.NOUR_STORIES||[]).forEach(s=>{
       const u=DB.users.find(x=>x.id===s.user_id);if(!u)return;
@@ -404,7 +418,11 @@
       try{
         const {data,error}=await sb.rpc("increment_profile_view",{target_user_id:u.id});
         if(error) throw error;
-        if(Number.isFinite(Number(data))) u.views=Number(data);
+        if(Number.isFinite(Number(data))){
+          u.views=Number(data);
+          const cached=DB.users.find(x=>x.id===u.id);
+          if(cached) cached.views=Number(data);
+        }
       }catch(e){
         console.error("Profile view:",e);
       }
